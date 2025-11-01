@@ -1,6 +1,43 @@
 # CPMTools Microbee Patch #
 ## Windows, macOS, Linux build instructions go here ##
 
+Building patched cpmtools
+=========================
+The patched-cpmtools is dependent on LibDsk being available and is needed
+for all RAW and other disk image formats including floppy disks.
+
+To build the 'fsed.cpm' utility in requires that an 'ncurses' development
+package is installed on the system.  The 'cpmtools' configure script will
+determine whether it exists.
+
+The 'xxr' here represents the 'cpmtools' version (xx) and patch (r) revision
+letter.
+
+To build cpmtools-2.xx follow these directions (Ubuntu Hardy):
+
+Make a new directory in your home account to work in:
+- $ mkdir cpmtools
+- $ cd cpmtools
+
+Copy the cpmtools-2.xxr-ubee.patch file to this directory.
+
+Untar the cpmtools-2.xx original tar distribution:
+- $ tar -xzf cpmtools-2.xx.tar.gz
+
+Apply the patch file:
+- $ patch -p0 < cpmtools-2.xxr-ubee.patch
+
+Copy the build.h file from the patch distribution
+- $ cp build.h cpmtools-2.xx
+
+Build CP/M tools:
+- $ cd cpmtools-2.xx
+- $ ./configure OPTIONS
+- $ make
+
+Install as user root with sudo or log in as root:
+- $ sudo make install
+
 # Original ReadMe #
 cpmtools-2.10j-ubee.patch - uBee 2016/11/16
 ===========================================
