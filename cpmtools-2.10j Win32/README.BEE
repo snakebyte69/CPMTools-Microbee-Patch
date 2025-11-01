@@ -1,0 +1,10 @@
+This is a patched Win32 build of cpmtools-2.10 rev j
+
+LibDsk has been built into this package.
+The 'diskdefs' file contains the common Microbee disk types, the Microbee
+formats use new diskdef parameters, see README.PATCH for details.
+The NEWS and README files are from the original cpmtools-2.10 distribution.
+
+These tools were crossed compiled using mingw32.
+
+uBee 2016/11/16

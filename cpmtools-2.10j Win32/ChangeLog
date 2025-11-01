@@ -1,0 +1,262 @@
+16 November 2016 - uBee
+-----------------------
+cpmtools-2.10j-ubee.patch
+
+New for this release:
+* Added a new option (-e) to 'cpmls' and 'cpmcp' to work on erased files
+  only and treat them as if they really exist as user 0 files.  Files that
+  have NOT been deleted will be ignored when using this option.  The option
+  will allow accessing files that have been marked as erased (0xe5) in the
+  user byte location and that do not have an 0xe5 byte following it.  The
+  2nd byte is a check to determine if a file really did exist.  See the
+  README.PATCH file for full details.
+* The LibDsk 'rcpmfs' type when used now overrides the skew, skewstart and
+  datasect values and sets them to 1 regardless of the disk format.
+* Compiled up against the LibDsk-1.4.2 library.  See the LibDsk ChangeLog.
+
+Changes:
+* The 'cpmls' and 'cpmcp' programs now provide more usage information.
+
+19 July 2016 - uBee
+-------------------
+cpmtools-2.10i-ubee.patch
+
+New for this release:
+* Added error checking to the 'libdsk' driver interface for out of range
+  tracks/sectors and check the results of reads and writes.  If error then
+  exit with error code 1 to avoid segmentation issues and output some
+  information to give the user some idea what went wrong.
+* Compiled up against the LibDsk-1.4.0 library which now provides IMD and
+  TRS-80 'JV3'image support along with other changes since 1.3.5.  See the
+  LibDsk ChangeLog.
+* Added 'datarate' option for use in the 'diskdefs' file to allow for
+  various data rate disks (can be used instead of the -L option).
+* Added output of 'sidedness' value for -i option in fsck.cpm.
+* Added k80dsdd1024 SME Aussie Byte 5.25" DS DD 80x5x1024 format to 'diskdefs'.
+* Added k80dsdd512 SME Aussie Byte 5.25" DS DD 80x10x512 format to 'diskdefs'.
+* Added k80sssd128 SME Aussie Byte 5.25" DS DD 80x18x128 format to 'diskdefs'.
+* Added lbb_77dshd LBB 5.25" DS HD 77x17x512 format to 'diskdefs'.
+* Added datamax8000sd Datamax 8000 8" SS SD 77x26x128 format to 'diskdefs'.
+* Added a file name option of 'diskdefsp' when looking for a disk definition
+  file to avoid conflicts with original 'cpmtools'.
+* Added 'fsed.cpm' to the Windows distribution package.
+* Added an install script file to all distributions packages.  The script
+  provides an option to prefix the binaries with 'p'.
+* Added some shell and batch scripts to make 'remote' type easier to use.
+* Added Raspberry Pi 'armhf' binary ZIP file distribution.
+
+Changes:
+* Changes to package naming convention and layout.
+* Changes to include 'man' pages in all distribution packages.
+* Changes to README.PATCH to describe the new 'datarate' value.
+* Changes to README.PATCH to add a new section describing "LibDsk extension
+  bytes 0x12, 0x13".
+* Changes to README.PATCH to add a new section describing "Error detection".
+* Various other information and changes made to README.PATCH.
+* Changed some 'diskdefs' definitions to use the new 'datarate' value.
+* Cleaned up sources to all patched files.
+
+Fixed:
+* Fixed a cpmtools bug in 2.10 (bug also in 2.20) where a Device_close()
+  call was not being made and IMD images were not being flushed.  This may
+  also have affected other disk image types.
+* Fixed issues in 'fsed.cpm' so that it should now work.
+
+1 March 2015 - uBee
+-------------------
+cpmtools-2.10h-ubee.patch
+
+New for this release:
+* Added a 'sideoffs' option for disks that use a different value in the
+  sector header for the side value not equal to the head value.
+* Added a 'sidedness' option for use in the 'diskdefs' file to allow disks
+  that use the 'Alternate, 'Out-Back' or 'Out-Out' cylinder arrangement to
+  be read/written correctly.  Existing disk entries that use 'Alternate'
+  (most) should not require any changes as it had always been the dafault.
+* Added an 'fm' option for FM encoded disks by specifying "fm 1". The
+  default value is 0 for MFM encoded disks (double density).
+* Added -i option to fsck.cpm to report some information about the specified
+  format which may be used by scripts.
+* Added Amust Compak 5.25" 80T (5.25" DS DD 80T 16x256 5x512 s/t) entry to
+ 'diskdefs'.
+* Added PortaPak 5.25" 80T (5.25" DS DD 80T 10x512 s/t) entry to 'diskdefs'.
+* Added Excalibur4 80x5x1024 (format 4) entry to 'diskdefs'.
+* Added 5.25" Single density, Double sided (5.25" DS SD 40T 18x128
+  s/t) entry to 'diskdefs' (uses Out-Back sidedness).
+* Added 5.25" Single density, Single sided (5.25" SS SD 40T 18x128
+  s/t) entry to 'diskdefs'.
+* Added Special Microbee Nanowasp disk image only format.
+
+Changes:
+* Changes to README.PATCH to describe the new 'sidedness', 'fm' entry in
+ 'diskdefs' and new -i option in fsck.cpm.
+* Compiled up against the LibDsk-1.3.5 library which now provides write
+  support for CopyQM disk images along with many other changes since 1.2.1
+  released in 2008-01-23.  See the LibDsk ChangeLog.
+* Make "*.*" match all files in CP/M by using "*" in place of it. Systems
+  that use command line Globbing should use double quotes around wildcards
+  when referring to the CP/M file system.
+
+Fixed:
+* Fixed CP/M 'u:' (u=user) as was not doing a '*' match.
+
+14 January 2014 - uBee
+----------------------
+cpmtools-2.10g-ubee.patch
+
+New for this release:
+* Added option to have the 'diskdefs' file in the user's home account on
+  Unix systems (as '.diskdefs').  On Unix the checking order is now the home
+  account, followed by the current directory and finally /usr/local/share.
+
+Changes:
+* Changes to README.PATCH to document where to place the 'diskdefs' or
+  '.diskdefs' file on Unix systems.
+* Changed Win32 cross compiler to use i586-mingw32msvc suite.
+
+Fixed:
+* Moved string_search() from device_libdsk.c to cpmfs.c and added the
+  protototype to cpmfs.h. to prevent compiler warning.
+
+12 May 2012 - uBee
+------------------
+cpmtools-2.10f-ubee.patch
+
+New for this release:
+* Added '-s' option to 'cpmcp' command substitute slash characters in host
+  file name with another character.
+* Added three extra disk formats to 'diskdefs'.
+
+Changes:
+* Removed the no_dsk_*[] structures from  device_libdsk.c as these were not
+  needed as slow serial was caused by the LibDsk's rpctios.c methods.
+* Changes to allow the 'remote' mode of the Floppyio interface to be fully
+  functional.
+* Removed entries in 'diskdefs' that use standard cpmtools disk definitions. 
+  If needed these should be added back with the modifications required.
+
+Fixed:
+* Fixed a problem in the win32 build where an incorrect path slash was being
+  used between the host output path and the filename.
+* Remote 'serial' on Unix builds to allow serial to use full potential speed
+  (LibDsk library).
+* Fixed the Linux build to include static libdsk.a, libbz2.a and libz.a
+  libraries.
+
+12 June 2011 - uBee
+-------------------
+cpmtools-2.10e-ubee.patch
+
+Fixed:
+* The win32 version now attempts to load a 'diskdefs' file from the same
+  location where the 'cpmtools' are executed from or the current path.
+* Fixed a problem in the win32 build where the incorrect trailing slash
+  character was being checked for on a source directory.  This now uses the
+  backslash '\' character.
+
+6 April 2010 - uBee
+-------------------
+cpmtools-2.10d-ubee.patch
+
+New for this release:
+* Added 'fm' parameter to 'diskdefs'.  fm=1 can then be used for single
+  density disks, the default is double density (mfm).
+* Added '-v' option to report the build version.
+
+Changes:
+* Changes to cpmtools to make LibDsk's 'remote' driver work with a Microbee
+  version of the AUXD.COM server program (FDS.COM).
+* Huge improvement in writing speed when using the 'cpmcp' command to copy
+  files to floppy disks by eliminating directory purging after each block of
+  file data.  This also applies to disk images but won't be so noticeable.
+
+Fixed:
+* Fixed problems with sector ID, read and write functions failing because of
+  unsupported functions in the driver type in use.  The changes will make
+  use of an alternative function appropriate for the driver to be used
+  instead.  This has fixed issues when using the 'raw' and 'remote' driver
+  as an input and possibly other driver types.
+
+21 February 2010 - uBee
+-----------------------
+cpmtools-2.10c-ubee.patch
+
+Fixed:
+* Bug in cpmtools win32 build where a 'cpmcp' host source file was being
+  opened in read text "r" mode instead of read binary "rb" mode.  This was
+  causing some files to be truncated in a copy operation when an EOF was
+  detected. getc() works differently on Unix systems so is not a problem. 
+  (cpmtools bug)
+* The '-T raw' option was not being interpreted correctly by
+  'device_libdsk.c' when specified on the command line which meant to use
+  raw mode no '-T raw' option was to be specified as it was the default and
+  would be set to raw anyway. (patch bug)
+
+11 December 2009 - uBee
+-----------------------
+cpmtools-2.10b-ubee.patch
+
+Fixed:
+* Reading and probably also writing using the 'dsk' type and double sided
+  CP/M formats failed to copy the correct sectors when the diskdefs file
+  defines 'testside 1' in a CP/M format. (patch bug)
+
+28 September 2009 - uBee
+------------------------
+cpmtools-2.10a-ubee.patch
+
+New for this release:
+* Added LibDsk option to set disk double stepping '-L dstep'
+* Added LibDsk option to set disk data rate '-L x'
+     hd : data rate for 1.4Mb 3.5" in 3.5" drive.
+     dd : data rate for 360k 5.25" in 1.2Mb drive.
+     sd : data rate for 720k 3.5" in 3.5" drive.
+     ed : data rate for 2.8Mb 3.5" in 3.5" drive.
+* Added in 40T and 80T dreamdisk formats.
+* Added new 'diskdefs' parameters:
+     cylinders n
+     heads n
+     skewstart n
+     datasect n
+     testside n
+* Added ability for disks to check sector ID side information to work around
+  Microbee's native format problems. (testside=1)
+
+Changes:
+* The CP/M file reporting option '-r' has been simplified.  The new 'heads'
+  parameter in 'diskdefs' now determines the sides.
+* The Microbee 'ds80' format now works for raw, dsk and floppy.
+* Microbee definitions in 'diskdefs' have been greatly improved.
+* The default disk type will be set to the 'raw' disk format if no '-T'
+  option is specified.
+* The diskdefs 'skewoffset' parameter has now been renamed to 'skewstart'
+* Increased the default retry value in 'LibDsk' from 5 to 100.
+
+Fixed:
+* LibDsk is now compiled into both Windows and Linux binary versions.
+
+18 September 2009 - uBee
+------------------------
+cpmtools-2.7b-ubee.patch
+
+New for this release:
+* Added option 'rx' to 'cpmcp' to report CP/M file physical locations.
+* Added LibDsk to build (did not compile in for win32)
+* Added 'datasect' parameter to 'diskdefs'.
+
+8 June 2008 - uBee
+------------------
+cpmtools-2.7a-ubee.patch
+
+Initial release:
+
+This patch allows Microbee formats to be defined with an offset value for
+the physical sector value.  Microbee disks start using physical sector 2
+normally (22 on DS80) when skew sector 1 is accessed.
+
+This patch also adds in the common Microbee disk formats to the diskdefs
+file.
+
+The diskdefs file entry for DS80 is only intended for raw disk image access.
+It won't work on a real disk or the libdsk library but this distribution is
+not intended for direct disk access or even libdsk.
