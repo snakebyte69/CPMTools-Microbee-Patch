@@ -1,0 +1,5921 @@
+Common subdirectories: cpmtools-2.10/badfs and cpmtools-2.10-diff/badfs
+diff -u cpmtools-2.10/cpmchattr.c cpmtools-2.10-diff/cpmchattr.c
+--- cpmtools-2.10/cpmchattr.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/cpmchattr.c	2016-11-16 10:53:54.602843247 +1030
+@@ -1,4 +1,3 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <ctype.h>
+@@ -12,13 +11,11 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+ 
+ const char cmd[]="cpmchattr";
+ 
+-int main(int argc, char *argv[]) /*{{{*/
++int main(int argc, char *argv[])
+ {
+-  /* variables */ /*{{{*/
+   const char *err;
+   const char *image;
+   const char *format=FORMAT;
+@@ -29,15 +26,24 @@
+   int gargc;
+   char **gargv;
+   const char *attrs; 
+-  /*}}}*/
+ 
+-  /* parse options */ /*{{{*/
+-  while ((c=getopt(argc,argv,"T:f:h?"))!=EOF) switch(c)
++  /* parse options */
++#if HAVE_LIBDSK_H
++  /* LibDsk option addition - uBee 2009/09/28 */
++  while ((c=getopt(argc,argv,"T:L:f:h?v"))!=EOF) switch(c)
++#else  
++  while ((c=getopt(argc,argv,"T:f:h?v"))!=EOF) switch(c)
++#endif  
+   {
+     case 'T': devopts=optarg; break;
+     case 'f': format=optarg; break;
+     case 'h':
+     case '?': usage=1; break;
++    case 'v': fprintf(stderr, APPVER"\n");    /* uBee 2010/03/31 */
++              exit(1);
++#if HAVE_LIBDSK_H
++    case 'L': Device_libdsk_options(optarg);  /* uBee 2009/09/28 */
++#endif    
+   }
+ 
+   if (optind>=(argc-2)) usage=1;
+@@ -50,17 +56,29 @@
+   if (usage)
+   {
+     fprintf(stderr,"Usage: %s [-f format] [-T dsktype] image [NMrsa1234] pattern ...\n",cmd);
++    /* Add some more information about existing and new options - uBee 2009/09/28 */
++    fprintf(stderr,"\nOther options:\n");
++    fprintf(stderr," -v    Report build version.\n");  /* 2010/03/31 uBee */
++#if HAVE_LIBDSK_H
++    fprintf(stderr," -T    libdsk type.\n");
++    fprintf(stderr," -L x  LibDsk options (x) separated by spaces in double quotes\n");
++    fprintf(stderr,"             hd : data rate for 1.4Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             dd : data rate for 360k 5.25\" in 1.2Mb drive.\n");
++    fprintf(stderr,"             sd : data rate for 720k 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             ed : data rate for 2.8Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"          dstep : double step (40T disk in 80T drive)\n");
++#endif
+     exit(1);
+   }
+-  /*}}}*/
+-  /* open image */ /*{{{*/
++
++  /* open image */
+   if ((err=Device_open(&drive.dev, image, O_RDWR, devopts)))
+   {
+     fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
+     exit(1);
+   }
+   cpmReadSuper(&drive,&root,format);
+-  /*}}}*/
++
+   cpmglob(optind,argc,argv,&root,&gargc,&gargv);
+   for (i=0; i<gargc; ++i)
+   {
+@@ -106,6 +124,6 @@
+       exitcode=1;
+     }
+   }
++  cpmUmount(&drive); /* uBee (MH 2.13) 2010/04/03 */
+   exit(exitcode);
+ }
+-/*}}}*/
+diff -u cpmtools-2.10/cpmchmod.c cpmtools-2.10-diff/cpmchmod.c
+--- cpmtools-2.10/cpmchmod.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/cpmchmod.c	2016-11-16 10:53:54.602843247 +1030
+@@ -1,4 +1,3 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <ctype.h>
+@@ -13,13 +12,11 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+ 
+ const char cmd[]="cpmchmod";
+ 
+-int main(int argc, char *argv[]) /*{{{*/
++int main(int argc, char *argv[])
+ {
+-  /* variables */ /*{{{*/
+   const char *err;
+   const char *image;
+   const char *format=FORMAT;
+@@ -30,15 +27,24 @@
+   int gargc;
+   char **gargv;
+   unsigned int mode; 
+-  /*}}}*/
+ 
+-  /* parse options */ /*{{{*/
+-  while ((c=getopt(argc,argv,"T:f:h?"))!=EOF) switch(c)
++  /* parse options */
++#if HAVE_LIBDSK_H
++  /* LibDsk option addition - uBee 2009/09/28 */
++  while ((c=getopt(argc,argv,"T:L:f:h?v"))!=EOF) switch(c)
++#else  
++  while ((c=getopt(argc,argv,"T:f:h?v"))!=EOF) switch(c)
++#endif  
+   {
+     case 'T': devopts=optarg; break;
+     case 'f': format=optarg; break;
+     case 'h':
+     case '?': usage=1; break;
++    case 'v': fprintf(stderr, APPVER"\n");    /* uBee 2010/03/31 */
++              exit(1);
++#if HAVE_LIBDSK_H
++    case 'L': Device_libdsk_options(optarg);  /* uBee 2009/09/28 */
++#endif    
+   }
+ 
+   if (optind>=(argc-2)) usage=1;
+@@ -51,17 +57,29 @@
+   if (usage)
+   {
+     fprintf(stderr,"Usage: %s [-f format] image mode pattern ...\n",cmd);
++    /* Add some more information about existing and new options - uBee 2009/09/28 */
++    fprintf(stderr,"\nOther options:\n");
++    fprintf(stderr," -v    Report build version.\n");  /* 2010/03/31 uBee */
++#if HAVE_LIBDSK_H
++    fprintf(stderr," -T    libdsk type.\n");
++    fprintf(stderr," -L x  LibDsk options (x) separated by spaces in double quotes\n");
++    fprintf(stderr,"             hd : data rate for 1.4Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             dd : data rate for 360k 5.25\" in 1.2Mb drive.\n");
++    fprintf(stderr,"             sd : data rate for 720k 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             ed : data rate for 2.8Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"          dstep : double step (40T disk in 80T drive)\n");
++#endif
+     exit(1);
+   }
+-  /*}}}*/
+-  /* open image */ /*{{{*/
++
++  /* open image */
+   if ((err=Device_open(&drive.dev, image, O_RDWR, devopts)))
+   {
+     fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
+     exit(1);
+   }
+   cpmReadSuper(&drive,&root,format);
+-  /*}}}*/
++
+   cpmglob(optind,argc,argv,&root,&gargc,&gargv);
+   for (i=0; i<gargc; ++i)
+   {
+@@ -78,6 +96,6 @@
+       exitcode=1;
+     }
+   }
++  cpmUmount(&drive); /* uBee (MH 2.13) 2010/04/03 */
+   exit(exitcode);
+ }
+-/*}}}*/
+diff -u cpmtools-2.10/cpmcp.c cpmtools-2.10-diff/cpmcp.c
+--- cpmtools-2.10/cpmcp.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/cpmcp.c	2016-11-16 10:53:54.602843247 +1030
+@@ -1,4 +1,3 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <sys/stat.h>
+@@ -18,24 +17,34 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
++
++/* 2016/11/01 uBee - for -e option */
++extern int erased_files;
+ 
+ const char cmd[]="cpmcp";
+ static int text=0;
+ static int preserve=0;
++static char substitute=0;
++
++/* for reporting - uBee 2009/09/28 */
++void cpm_set_report (int report, const char *s);
++static int report_sides;
+ 
+ /**
+  * Return the user number.
+  * @param s CP/M filename in 0[0]:aaaaaaaa.bbb format.
+  * @returns The user number or -1 for no match.
+  */
+-static int userNumber(const char *s) /*{{{*/
++static int userNumber(const char *s)
+ {
+-  if (isdigit(*s) && *(s+1)==':') return (*s-'0');
+-  if (isdigit(*s) && isdigit(*(s+1)) && *(s+2)==':') return (10*(*s-'0')+(*(s+1)));
+-  return -1;
++ if (isdigit(*s) && *(s+1)==':')
++    return (*s-'0');
++    
++ if (isdigit(*s) && isdigit(*(s+1)) && *(s+2)==':')
++    return (10*(*s-'0')+(*(s+1)));
++
++ return -1;
+ }
+-/*}}}*/
+ 
+ /**
+  * Copy one file from CP/M to UNIX.
+@@ -44,10 +53,12 @@
+  * @param dest The UNIX filename.
+  * @returns 0 for success, 1 for error.
+  */
+-static int cpmToUnix(const struct cpmInode *root, const char *src, const char *dest) /*{{{*/
++static int cpmToUnix(const struct cpmInode *root, const char *src, const char *dest)
+ {
+   struct cpmInode ino;
+   int exitcode=0;
++  int res;          /* uBee 2009/09/28 */
++  char buf[4096];   /* uBee 2009/09/28 */
+ 
+   if (cpmNamei(root,src,&ino)==-1) { fprintf(stderr,"%s: can not open `%s': %s\n",cmd,src,boo); exitcode=1; }
+   else
+@@ -56,14 +67,31 @@
+     FILE *ufp;
+ 
+     cpmOpen(&ino,&file,O_RDONLY);
++
++/* skip the actual file copy to unix if we are after just a CP/M file report. - uBee 2009/09/28 */
++  if (report_sides)
++     {
++      printf("\nSde Cyl Sec Usr Filename\n");
++      printf(  "--- --- --- --- --------\n");
++      cpm_set_report(report_sides, src);
++      while ((res=cpmRead(&file,buf,sizeof(buf)))!=0)
++         ;
++     }
++  else
++     {
++/* uBee 2009/09/28 end */
++
++
++
++
++
+     if ((ufp=fopen(dest,text ? "w" : "wb"))==(FILE*)0) { fprintf(stderr,"%s: can not create %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; }
+     else
+     {
+       int crpending=0;
+       int ohno=0;
+-      int res;
+-      char buf[4096];
+-
++/* uBee 2009/09/28 int res; */
++/* uBee 2009/09/28 char buf[4096]; */
+       while ((res=cpmRead(&file,buf,sizeof(buf)))!=0)
+       {
+         int j;
+@@ -103,25 +131,46 @@
+         if (utime(dest,&ut)==-1) { fprintf(stderr,"%s: can change timestamps of %s: %s\n",cmd,dest,strerror(errno)); exitcode=1; ohno=1; }
+       }
+     }
++     }  /* uBee 2009/09/28 */    
+     cpmClose(&file);
+   }
++ 
+   return exitcode;
+ }
+-/*}}}*/
+ 
+-static void usage(void) /*{{{*/
++static void usage(void)
+ {
+-  fprintf(stderr,"Usage: %s [-f format] [-p] [-t] image user:file file\n",cmd);
+-  fprintf(stderr,"       %s [-f format] [-p] [-t] image user:file ... directory\n",cmd);
+-  fprintf(stderr,"       %s [-f format] [-p] [-t] image file user:file\n",cmd);
+-  fprintf(stderr,"       %s [-f format] [-p] [-t] image file ... user:\n",cmd);
++  fprintf(stderr,
++  "Usage: %s [-cersv] [-f format] [-p] [-t] image user:file file\n"
++  "       %s [-cersv] [-f format] [-p] [-t] image user:file ... directory\n"
++  "       %s [-cersv] [-f format] [-p] [-t] image file user:file\n"
++  "       %s [-cersv] [-f format] [-p] [-t] image file ... user:\n",cmd,cmd,cmd,cmd);
++
++  /* Add some more information about existing and new options - uBee 2009/09/28 2016/11/01 */
++  fprintf(stderr,
++  "\nOther options:\n"
++  " -e    Work on Erased files only (as user 0).\n"
++  " -r    No copying, instead outputs a CP/M file location report.\n"
++  "       Requires a 'head' entry in diskdefs if heads > 1.\n"
++  "       A dummy destination location is also required.\n"
++  " -s c  Substitute slash characters in CP/M file names with\n" /* 2011/09/06 uBee */
++  "       character 'c' when copying to host.\n"
++  " -v    Report build version.\n");
++#if HAVE_LIBDSK_H
++  fprintf(stderr,
++  " -T    libdsk type.\n"
++  " -L x  LibDsk options (x) separated by spaces in double quotes\n"
++  "             hd : data rate for 1.4Mb 3.5\" in 3.5\" drive.\n"
++  "             dd : data rate for 360k 5.25\" in 1.2Mb drive.\n"
++  "             sd : data rate for 720k 3.5\" in 3.5\" drive.\n"
++  "             ed : data rate for 2.8Mb 3.5\" in 3.5\" drive.\n"
++  "          dstep : double step (40T disk in 80T drive)\n");
++#endif
+   exit(1);
+ }
+-/*}}}*/
+ 
+ int main(int argc, char *argv[])
+ {
+-  /* variables */ /*{{{*/
+   const char *err;
+   const char *image;
+   const char *format=FORMAT;
+@@ -132,57 +181,90 @@
+   int exitcode=0;
+   int gargc;
+   char **gargv;
+-  /*}}}*/
++  char patched_cpm_file_name[20];
+ 
+-  /* parse options */ /*{{{*/
+-  while ((c=getopt(argc,argv,"T:f:h?pt"))!=EOF) switch(c)
++  /* parse options */
++#if HAVE_LIBDSK_H
++  /* LibDsk and CP/M file location report options (L and r) addition - uBee 2009/09/28 */
++  /* New -e option to only work on erased_files - uBee 2016/11/01 */  
++  while ((c=getopt(argc,argv,"eT:L:f:h?ps:trv"))!=EOF) switch(c)
++#else  
++  while ((c=getopt(argc,argv,"eT:f:h?ps:tv"))!=EOF) switch(c)
++#endif  
+   {
+     case 'T': devopts=optarg; break;
++    case 'e': erased_files = 1; /* uBee 2016/11/01 */
++              readcpm = 1;
++              break;
+     case 'f': format=optarg; break;
+     case 'h':
+     case '?': usage(); break;
+     case 'p': preserve=1; break;
+     case 't': text=1; break;
++    case 'r': report_sides = 1; break;        /* uBee 2009/09/28 */
++    case 's': substitute=*optarg; break;
++    case 'v': fprintf(stderr, APPVER"\n");    /* uBee 2010/03/31 */
++              exit(1);
++#if HAVE_LIBDSK_H
++    case 'L': Device_libdsk_options(optarg);  /* uBee 2009/09/28 */
++              break;
++#endif
+   }
+-  /*}}}*/
+-  /* parse arguments */ /*{{{*/
+-  if ((optind+2)>=argc) usage();
++  /* parse arguments */
++  if ((optind+2)>=argc)
++     usage();
++
+   image=argv[optind++];
+ 
+-  if (userNumber(argv[optind])>=0) /* cpm -> unix? */ /*{{{*/
++  if (userNumber(argv[optind])>=0) /* cpm -> unix? */
+   {
+     int i;
+     struct stat statbuf;
+ 
+-    for (i=optind; i<(argc-1); ++i) if (userNumber(argv[i])==-1) usage();
+-    todir=((argc-optind)>2);
+-    if (stat(argv[argc-1],&statbuf)==-1) { if (todir) usage(); }
+-    else if (S_ISDIR(statbuf.st_mode)) todir=1; else if (todir) usage();
++    for (i=optind; i<(argc-1); ++i)
++       if (userNumber(argv[i])==-1)
++           usage();
++
++    /* if we are making a CP/M file report then skip unix dir checking - uBee 2009/09/28 */
++    if (report_sides)  /* uBee 2009/09/28 */
++       todir = 1;  /* files won't really get copied! - uBee 2009/09/28 */
++    else /* uBee 2009/09/28 */
++       { /* uBee 2009/09/28 */
++        todir=((argc-optind)>2);
++        if (stat(argv[argc-1],&statbuf)==-1) { if (todir) usage(); }
++        else if (S_ISDIR(statbuf.st_mode)) todir=1; else if (todir) usage();
++       } /* uBee 2009/09/28 */
+     readcpm=1;
+   }
+-  /*}}}*/
+-  else if (userNumber(argv[argc-1])>=0) /* unix -> cpm */ /*{{{*/
++
++  else if (userNumber(argv[argc-1])>=0) /* unix -> cpm */
+   {
+     int i;
+ 
+     todir=0;
+-    for (i=optind; i<(argc-1); ++i) if (userNumber(argv[i])>=0) usage();
+-    if ((argc-optind)>2 && *(strchr(argv[argc-1],':')+1)!='\0') usage();
+-    if (*(strchr(argv[argc-1],':')+1)=='\0') todir=1;
++    for (i=optind; i<(argc-1); ++i)
++       if (userNumber(argv[i])>=0)
++          usage();
++
++    if ((argc-optind)>2 && *(strchr(argv[argc-1],':')+1)!='\0')
++       usage();
++
++    if (*(strchr(argv[argc-1],':')+1)=='\0')
++       todir=1;
++
+     readcpm=0;
+   }
+-  /*}}}*/
+   else usage();
+-  /*}}}*/
+-  /* open image file */ /*{{{*/
++
++  /* open image file */
+   if ((err=Device_open(&super.dev,image,readcpm ? O_RDONLY : O_RDWR, devopts)))
+   {
+     fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
+     exit(1);
+   }
+   cpmReadSuper(&super,&root,format);
+-  /*}}}*/
+-  if (readcpm) /* copy from CP/M to UNIX */ /*{{{*/
++
++  if (readcpm) /* copy from CP/M to UNIX */
+   {
+     int i;
+     char *last=argv[argc-1];
+@@ -197,51 +279,106 @@
+       if (todir)
+       {
+         strcpy(dest,last);
+-        strcat(dest,"/");
+-        strcat(dest,gargv[i]+2);
++
++/* 2011/09/06, 2015/01/10 uBee - only use the slash character for unices */
++#ifdef _WIN32
++        strcat(dest,"\\");
++#else
++        if (*dest && dest[strlen(dest) - 1] != '/')
++           strcat(dest,"/");
++#endif        
++        /* uBee 2011/09/06 substitute characters in host file name */
++        strcpy(patched_cpm_file_name, gargv[i]+2);
++
++        if (substitute)
++           {
++            char *p;
++            p = patched_cpm_file_name;
++            while (*p)
++               {
++                if (*p == '\\' || *p == '/')
++                   *p = substitute;
++                p++;
++               }
++           }
++
++        strcat(dest, patched_cpm_file_name);
++/*        strcat(dest,gargv[i]+2);  */
+       }
+-      else strcpy(dest,last);
+-      if (cpmToUnix(&root,gargv[i],dest)) exitcode=1;
++      else
++         strcpy(dest,last);
++         
++      /* uBee 2016/11/02 - If copying erased files append '_ERASED-000n' where n is incremented each time */
++      if (erased_files)
++         {
++          int l;
++          l = strlen(dest);
++          sprintf(&dest[l], "_ERASED-%04d", erased_files);
++          erased_files++;
++#if 0
++          printf("Copying: %s\n" ,dest);
++#endif
++         }
++
++      if (cpmToUnix(&root,gargv[i],dest))
++         exitcode=1;
+     }
+   }
+-  /*}}}*/
+-  else /* copy from UNIX to CP/M */ /*{{{*/
++
++  else /* copy from UNIX to CP/M */
+   {
+     int i;
+ 
+     for (i=optind; i<(argc-1); ++i)
+     {
+-      /* variables */ /*{{{*/
++      /* variables */
+       char *dest=(char*)0;
+       FILE *ufp;
+-      /*}}}*/
+ 
+-      if ((ufp=fopen(argv[i],"r"))==(FILE*)0) /* cry a little */ /*{{{*/
++
++/* Need to open in binary mode under win32 or the file gets truncated when EOF is found. - uBee 2010/02/21 */
++/*    if ((ufp=fopen(argv[i],"r"))==(FILE*)0) */ /* cry a little */
++      if ((ufp=fopen(argv[i],"rb"))==(FILE*)0) /* win32 needs binary mode - uBee 2010/02/21 */
+       {
+         fprintf(stderr,"%s: can not open %s: %s\n",cmd,argv[i],strerror(errno));
+         exitcode=1;
+       }
+-      /*}}}*/
++
+       else
+       {
+         struct cpmInode ino;
+-        char cpmname[2+8+3+1]; /* 00foobarxy.zzy\0 */
++
++/* 2010/08/26 uBee - Must need 15 surely? but make it 20 to be safe */
++/*        char cpmname[2+8+3+1]; */ /* 00foobarxy.zzy\0 */
++        char cpmname[20]; /* 00foobarxy.zzy\0 */        
+ 
+         if (todir)
+         {
+-          if ((dest=strrchr(argv[i],'/'))!=(char*)0) ++dest; else dest=argv[i];
++/* 2010/08/26, 2015/01/10 uBee - Use the correct slash character for win32 '\' (escaped) */
++#ifdef _WIN32
++         if ((dest = strrchr(argv[i], '\\')))
++            ++dest;
++         else
++            dest = argv[i];
++#else
++         if ((dest = strrchr(argv[i], '/')))
++            ++dest;
++         else
++            dest = argv[i];
++#endif
+           sprintf(cpmname,"%02d%s",userNumber(argv[argc-1]),dest);
+         }
+         else
+         {
+           sprintf(cpmname,"%02d%s",userNumber(argv[argc-1]),strchr(argv[argc-1],':')+1);
+         }
+-        if (cpmCreat(&root,cpmname,&ino,0666)==-1) /* just cry */ /*{{{*/
++
++        if (cpmCreat(&root,cpmname,&ino,0666)==-1) /* just cry */
+         {
+           fprintf(stderr,"%s: can not create %s: %s\n",cmd,cpmname,boo);
+           exitcode=1;
+         }
+-        /*}}}*/
++
+         else
+         {
+           struct cpmFile file;
+@@ -258,6 +395,7 @@
+               if (text && c=='\n') buf[j++]='\r';
+               buf[j]=c;
+             }
++
+             if (text && c==EOF) buf[j++]='\032';
+             if (cpmWrite(&file,buf,j)!=j)
+             {
+@@ -267,18 +405,23 @@
+               break;
+             }
+           } while (c!=EOF);
+-          if (cpmClose(&file)==EOF && !ohno) /* I just can't hold back the tears */ /*{{{*/
++          if (cpmClose(&file)==EOF && !ohno) /* I just can't hold back the tears */
+           {
+             fprintf(stderr,"%s: can not close %s: %s\n",cmd,dest,boo);
+             exitcode=1;
+           }
+-          /*}}}*/
++
+         }
+         fclose(ufp);
+       }
+     }
+   }
+-  /*}}}*/
++
+   cpmUmount(&super);
+-  exit(exitcode);
++
++ /* 2015/04/26 uBee - Device_close() call missing causing IMD images to not be flushed */
++ if (&super.dev)
++    Device_close(&super.dev);
++ 
++ exit(exitcode);
+ }
+diff -u cpmtools-2.10/cpmfs.c cpmtools-2.10-diff/cpmfs.c
+--- cpmtools-2.10/cpmfs.c	2009-07-07 00:56:30.000000000 +0930
++++ cpmtools-2.10-diff/cpmfs.c	2016-11-16 10:53:54.602843247 +1030
+@@ -1,4 +1,3 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <sys/stat.h>
+@@ -16,8 +15,8 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+-/* #defines */ /*{{{*/
++
++/* #defines */
+ #undef CPMFS_DEBUG
+ 
+ /* Number of _used_ bits per int */
+@@ -36,14 +35,31 @@
+ #define RESERVED_INODES 3
+ 
+ #define PASSWD_RECLEN 24
+-/*}}}*/
++
++/* 2014/02/03 uBee - test the sidedness feature */
++/* #define TEST_SIDEDNESS */
+ 
+ extern char **environ;
++extern int rcpmfs;  /* uBee 2016/11/11 */
++
+ const char *boo;
++
++/* 2016/11/01 uBee - for -e option set in cpmls and cpmcp */
++int erased_files = 0;
++
+ static mode_t s_ifdir=1;
+ static mode_t s_ifreg=1;
+ 
+-/* memcpy7            -- Copy string, leaving 8th bit alone      */ /*{{{*/
++/* uBee 2009/09/28 - Used for CP/M file reports */
++static int report_file_acc;
++static int report_sides;
++static char report_file_user[3];
++static char report_file_name[32];
++void cpm_set_report (int heads, const char *s);
++
++/*============================================================================*/
++/* memcpy7            -- Copy string, leaving 8th bit alone      */
++/*============================================================================*/
+ static void memcpy7(char *dest, const char *src, int count)
+ {
+   while (count--)
+@@ -53,10 +69,11 @@
+     ++src;
+   }
+ }
+-/*}}}*/
+ 
++/*============================================================================*/
+ /* file name conversions */ 
+-/* splitFilename      -- split file name into name and extension */ /*{{{*/
++/* splitFilename      -- split file name into name and extension */
++/*============================================================================*/
+ static int splitFilename(const char *fullname, int type, char *name, char *ext, int *user) 
+ {
+   int i,j;
+@@ -65,14 +82,16 @@
+   assert(name!=(char*)0);
+   assert(ext!=(char*)0);
+   assert(user!=(int*)0);
++  
+   memset(name,' ',8);
+   memset(ext,' ',3);
++  
+   if (!isdigit(fullname[0]) || !isdigit(fullname[1]))
+   {
+     boo="illegal CP/M filename";
+     return -1;
+   }
+-  *user=10*(fullname[0]-'0')+(fullname[1]-'0');
++  *user=10 * (fullname[0]-'0') + (fullname[1]-'0');
+   fullname+=2;
+   if ((fullname[0]=='\0') || (type==CPMFS_DR22 && *user>=16) || (type==CPMFS_P2DOS && *user>=32))
+   {
+@@ -84,7 +103,9 @@
+     boo="illegal CP/M filename";
+     return -1;
+   }
+-  else name[i]=toupper(fullname[i]);
++  else
++     name[i]=toupper(fullname[i]);
++
+   if (fullname[i]=='.')
+   {
+     ++i;
+@@ -93,7 +114,9 @@
+       boo="illegal CP/M filename";
+       return -1;
+     }
+-    else ext[j]=toupper(fullname[i]);
++    else
++       ext[j]=toupper(fullname[i]);
++
+     if (i==1 && j==0)
+     {
+       boo="illegal CP/M filename";
+@@ -102,8 +125,8 @@
+   }
+   return 0;
+ }
+-/*}}}*/
+-/* isMatching         -- do two file names match?                */ /*{{{*/
++
++/* isMatching         -- do two file names match?                */
+ static int isMatching(int user1, const char *name1, const char *ext1, int user2, const char *name2, const char *ext2)
+ {
+   int i;
+@@ -112,15 +135,25 @@
+   assert(ext1!=(const char*)0);
+   assert(name2!=(const char*)0);
+   assert(ext2!=(const char*)0);
+-  if (user1!=user2) return 0;
+-  for (i=0; i<8; ++i) if ((name1[i]&0x7f)!=(name2[i]&0x7f)) return 0;
+-  for (i=0; i<3; ++i) if ((ext1[i]&0x7f)!=(ext2[i]&0x7f)) return 0;
++
++  if (user1 != user2)
++     return 0;
++
++  for (i=0; i<8; ++i)
++     if ((name1[i]&0x7f) != (name2[i]&0x7f))
++        return 0;
++
++  for (i=0; i<3; ++i)
++     if ((ext1[i]&0x7f) != (ext2[i]&0x7f))
++        return 0;
++
+   return 1;
+ }
+-/*}}}*/
+ 
++/*============================================================================*/
+ /* time conversions */
+-/* cpm2unix_time      -- convert CP/M time to UTC                */ /*{{{*/
++/* cpm2unix_time      -- convert CP/M time to UTC                */
++/*============================================================================*/
+ static time_t cpm2unix_time(int days, int hour, int min)
+ {
+   /* CP/M stores timestamps in local time.  We don't know which     */
+@@ -175,8 +208,8 @@
+   t-=lt;
+   return t;
+ }
+-/*}}}*/
+-/* unix2cpm_time      -- convert UTC to CP/M time                */ /*{{{*/
++
++/* unix2cpm_time      -- convert UTC to CP/M time                */
+ static void unix2cpm_time(time_t now, int *days, int *hour, int *min) 
+ {
+   struct tm *tms;
+@@ -192,22 +225,44 @@
+   }
+   *days += tms->tm_yday+1;
+ }
+-/*}}}*/
+ 
++/*============================================================================*/
+ /* allocation vector bitmap functions */
+-/* alvInit            -- init allocation vector                  */ /*{{{*/
++/* alvInit            -- init allocation vector                  */
++/*============================================================================*/
+ static void alvInit(const struct cpmSuperBlock *d)
+ {
+   int i,j,offset,block;
+ 
+   assert(d!=(const struct cpmSuperBlock*)0);
+-  /* clean bitmap */ /*{{{*/
++  /* clean bitmap */
+   memset(d->alv,0,d->alvSize*sizeof(int));
+-  /*}}}*/
+-  /* mark directory blocks as used */ /*{{{*/
++ 
++  /* mark directory blocks as used */
+   *d->alv=(1<<((d->maxdir*32+d->blksiz-1)/d->blksiz))-1;
+-  /*}}}*/
+-  for (i=0; i<d->maxdir; ++i) /* mark file blocks as used */ /*{{{*/
++
++ /* uBee 2016/11/01 - test if -e option used (erased_files=1) - this is used to treat
++ erased files as user 0,  non-erase files are set to erased. This is used by cpmls
++ and cpmcp.  It allows recovering erase files without having to modify the image.*/
++ if (erased_files)
++    {
++     printf("---------------------------------------------------------------------------\n");    
++     printf("alvInit(): WARNING the '-e' option is in effect! FILEs may contain rubbish!\n");
++     printf("alvInit(): Use at your own risk for recovering an unknown file state!\n");
++     printf("---------------------------------------------------------------------------\n\n");
++     for (i=0; i<d->maxdir; ++i)
++        {
++         /* if a file exists we erase it ! */
++         if (d->dir[i].status >=0 && d->dir[i].status <= (d->type==CPMFS_P2DOS ? 31 : 15))
++            d->dir[i].status = (char)0xe5;
++        else
++           /* if it's an erase file and looks like has a filename make it a user 0 entry */
++           if (d->dir[i].status == (char)0xe5 && d->dir[i].name[0] != (char)0xe5) 
++              d->dir[i].status = 0x00;    
++        }
++    }
++ 
++  for (i=0; i<d->maxdir; ++i) /* mark file blocks as used */
+   {
+     if (d->dir[i].status>=0 && d->dir[i].status<=(d->type==CPMFS_P2DOS ? 31 : 15))
+     {
+@@ -229,10 +284,11 @@
+       }
+     }
+   }
+-  /*}}}*/
+ }
+-/*}}}*/
+-/* allocBlock         -- allocate a new disk block               */ /*{{{*/
++
++/*============================================================================*/
++/* allocBlock         -- allocate a new disk block               */
++/*============================================================================*/
+ static int allocBlock(const struct cpmSuperBlock *drive)
+ {
+   int i,j,bits,block;
+@@ -259,72 +315,186 @@
+   boo="device full";
+   return -1;
+ }
+-/*}}}*/
+ 
+-/* logical block I/O */
+-/* readBlock          -- read a (partial) block                  */ /*{{{*/
+-static int readBlock(const struct cpmSuperBlock *d, int blockno, char *buffer, int start, int end)
+-{
+-  int sect, track, counter;
++/*
++================================================================================
++ logical block I/O
++
++ uBee 2016/07/18 rev i
++ Added 0 to be passed to 'flags' parameter in Device_readSector(), won't be
++ used here as flags only only used by fsed.cpm
++
++ uBee 2014/02/03 rev h Added call to new get_physical_values() to return
++ physical values based on 'sidedness' value for MAP reports.
++================================================================================
++*/
++
++/*
++================================================================================
++ readBlock          -- read a (partial) block
++================================================================================
++*/
++static int readBlock(const struct cpmSuperBlock *d, int blockno, char *buffer,
++                     int start, int end)
++{
++ int sect, track, counter;
++
++ assert(blockno >= 0);
++ assert(blockno < d->size);
++ assert(buffer != (char*)0);
+ 
+-  assert(blockno>=0);
+-  assert(blockno<d->size);
+-  assert(buffer!=(char*)0);
+-  if (end<0) end=d->blksiz/d->secLength-1;
+-  sect=(blockno*(d->blksiz/d->secLength)+ d->sectrk*d->boottrk)%d->sectrk;
+-  track=(blockno*(d->blksiz/d->secLength)+ d->sectrk*d->boottrk)/d->sectrk;
+-  for (counter=0; counter<=end; ++counter)
+-  {
+-    const char *err;
++ if (end < 0)
++    end = d->blksiz / d->secLength-1;
+ 
+-    if (counter>=start && (err=Device_readSector(&d->dev,track,d->skewtab[sect],buffer+(d->secLength*counter))))
+-    {
+-      boo=err;
+-      return -1;
+-    }
+-    ++sect;
+-    if (sect>=d->sectrk) 
++ /* uBee 2015/01/03 - Need a method for disks that have different size system
++  * tracks to calculate the correct block location.
++  
++  A better method was worked out then when I went to change the same code in
++  writeBlock found that it had the correct method already coded!  but not
++  here.
++ 
++  We don't need to know how many sectors or what the size is on the system
++  tracks.  We only want the Track and sector number for the block.  EDSK and
++  Floppy formats are able to deal with different size tracks.
++
++  So the logical track number for block 0 is simpy equal to d->boottrk
++ */
++
++/*
++    0 = ((0     * (  2048      /    512    )) %    10
++    4 = ((1     * (  2048      /    512    )) %    10
++    8 = ((2     * (  2048      /    512    )) %    10
++    2 = ((3     * (  2048      /    512    )) %    10
++    6 = ((4     * (  2048      /    512    )) %    10
++    0 = ((5     * (  2048      /    512    )) %    10
++    4 = ((6     * (  2048      /    512    )) %    10
++    8 = ((7     * (  2048      /    512    )) %    10
++*/
++
++ sect = (blockno * (d->blksiz / d->secLength)) % d->sectrk;
++
++/*
++    2  = ((0       * (  2048      /    512    )) /    10    +    2
++    2  = ((1       * (  2048      /    512    )) /    10    +    2
++    2  = ((2       * (  2048      /    512    )) /    10    +    2
++    3  = ((3       * (  2048      /    512    )) /    10    +    2
++    3  = ((4       * (  2048      /    512    )) /    10    +    2
++    4  = ((5       * (  2048      /    512    )) /    10    +    2
++    4  = ((6       * (  2048      /    512    )) /    10    +    2
++    4  = ((7       * (  2048      /    512    )) /    10    +    2
++    5  = ((8       * (  2048      /    512    )) /    10    +    2
++    5  = ((9       * (  2048      /    512    )) /    10    +    2
++    6  = ((10      * (  2048      /    512    )) /    10    +    2
++*/  
++
++ track = (blockno * (d->blksiz / d->secLength)) / d->sectrk + d->boottrk;
++
++ /* uBee 2015/01/03 - original code to calculate sect and track values
++ sect = (blockno * (d->blksiz / d->secLength) + d->sectrk * d->boottrk) % d->sectrk;
++ track = (blockno * (d->blksiz / d->secLength) + d->sectrk * d->boottrk) / d->sectrk;
++ */
++
++#if 0
++ /* 2015/01/10 uBee */
++ int xsect = (blockno * (d->blksiz / d->secLength) + d->sectrk * d->boottrk) % d->sectrk;
++ int xtrack = (blockno * (d->blksiz / d->secLength) + d->sectrk * d->boottrk) / d->sectrk;
++ printf("BLK=%4d TRK=%02d SEC=%02d xTRK=%02d xSEC=%02d\n", blockno, track, sect, xtrack, xsect);
++#endif
++
++ for (counter = 0; counter <= end; ++counter)
+     {
+-      sect = 0;
+-      ++track;
++     const char *err;
++
++     /* uBee 2009/09/28 - CP/M file physical location report */
++     if (report_file_acc)
++        {
++         int cyl;
++         int head;
++       
++         /* convert to physical values according to sidedness */
++         get_physical_values(d->cylinders, d->heads, d->sidedness, track, &cyl, &head);
++         printf("%03d %03d %03d %s: %s\n", head, cyl, d->skewtab[sect], report_file_user, report_file_name);
++        }
++
++     /*    if (counter>=start && (err=Device_readSector(&d->dev,track,d->skewtab[sect],buffer+(d->secLength*counter)))) */
++     /* uBee 2010/02/27 - Need to also pass the logical sector number to make 'remote' work on CP/M 3. */
++     if (counter>=start && (err=Device_readSector(&d->dev,track,d->skewtab[sect],sect,0,buffer+(d->secLength*counter))))
++        {
++         boo = err;
++         return -1;
++        }
++
++     ++sect;
++
++     if (sect >= d->sectrk) 
++        {
++         sect = 0;
++         ++track;
++        }
+     }
+-  }
+-  return 0;
++ return 0;
+ }
+-/*}}}*/
+-/* writeBlock         -- write a (partial) block                 */ /*{{{*/
++
++/*
++============================================================================
++ writeBlock         -- write a (partial) block
++============================================================================
++*/
+ static int writeBlock(const struct cpmSuperBlock *d, int blockno, const char *buffer, int start, int end)
+ {
+   int sect, track, counter;
+ 
+-  assert(blockno>=0);
+-  assert(blockno<d->size);
+-  assert(buffer!=(const char*)0);
+-  if (end < 0) end=d->blksiz/d->secLength-1;
+-  sect = (blockno*(d->blksiz/d->secLength))%d->sectrk;
+-  track = (blockno*(d->blksiz/d->secLength))/d->sectrk+d->boottrk;
++  assert(blockno >= 0);
++  assert(blockno < d->size);
++  assert(buffer != (const char*)0);
++
++  if (end < 0)
++     end = d->blksiz / d->secLength-1;
++
++ /* uBee 2015/01/03 - Need a method for disks that have different size system
++  * tracks to calculate the correct block location
++ 
++ We don't need to know how many sectors or what the size is on the system tracks. 
++ We only want the Track and sector number for the block.  EDSK and Floppy
++ formats are able to deal with different size tracks.
++
++ So the logical track number for block 0 is simpy equal to d->boottrk
++ */
++
++ sect = (blockno * (d->blksiz / d->secLength)) % d->sectrk;
++ track = (blockno * (d->blksiz / d->secLength)) / d->sectrk + d->boottrk; 
++
++ /* uBee 2015/01/03 - original code to calculate sect and track values
++  sect = (blockno * (d->blksiz / d->secLength)) % d->sectrk;
++  track = (blockno * (d->blksiz / d->secLength)) / d->sectrk + d->boottrk;
++ */
++
+   for (counter = 0; counter<=end; ++counter)
+-  {
+-    const char *err;
++     {
++      const char *err;
+ 
+-    if (counter>=start && (err=Device_writeSector(&d->dev,track,d->skewtab[sect],buffer+(d->secLength*counter))))
+-    {
+-      boo=err;
+-      return -1;
+-    }
+-    ++sect;
+-    if (sect>=d->sectrk) 
+-    {
+-      sect=0;
+-      ++track;
+-    }
+-  }
++      /*    if (counter>=start && (err=Device_writeSector(&d->dev,track,d->skewtab[sect],buffer+(d->secLength*counter)))) */
++      /* uBee 2010/02/27 - Need to also pass the logical sector number to make 'remote' work under CP/M 3 and AUXD. */
++      if (counter>=start && (err=Device_writeSector(&d->dev,track,d->skewtab[sect],sect,0,buffer+(d->secLength*counter))))    
++         {
++          boo = err;
++          return -1;
++         }
++
++      ++sect;
++
++      if (sect >= d->sectrk) 
++         {
++          sect = 0;
++          ++track;
++         }
++     }
+   return 0;
+ }
+-/*}}}*/
+ 
+ /* directory management */
+-/* readPhysDirectory  -- read directory from drive               */ /*{{{*/
++/* readPhysDirectory  -- read directory from drive               */
++/* uBee (MH 2.13) 2010/04/03 (done once only elsewhere now)
+ static int readPhysDirectory(const struct cpmSuperBlock *drive)
+ {
+   int i,blocks,entry;
+@@ -338,8 +508,10 @@
+   }
+   return 0;
+ }
+-/*}}}*/
+-/* writePhysDirectory -- write directory to drive                */ /*{{{*/
++*/
++
++/* writePhysDirectory -- write directory to drive                */
++/* uBee (MH 2.13) 2010/04/03 (done once only elsewhere now)
+ static int writePhysDirectory(const struct cpmSuperBlock *drive)
+ {
+   int i,blocks,entry;
+@@ -353,35 +525,43 @@
+   }
+   return 0;
+ }
+-/*}}}*/
+-/* findFileExtent     -- find first/next extent for a file       */ /*{{{*/
++*/
++
++/*============================================================================*/
++/* findFileExtent     -- find first/next extent for a file       */
++/*============================================================================*/
+ static int findFileExtent(const struct cpmSuperBlock *sb, int user, const char *name, const char *ext, int start, int extno)
+ {
+   boo="file already exists";
+   for (; start<sb->maxdir; ++start)
+-  {
+-    if
+-    (
+-      ((unsigned char)sb->dir[start].status)<=(sb->type==CPMFS_P2DOS ? 31 : 15)
+-      && (extno==-1 || (EXTENT(sb->dir[start].extnol,sb->dir[start].extnoh)/sb->extents)==(extno/sb->extents))
++     {
++      if (((unsigned char)sb->dir[start].status) <= (sb->type==CPMFS_P2DOS ? 31 : 15)
++      && (extno==-1 || (EXTENT(sb->dir[start].extnol,sb->dir[start].extnoh)/sb->extents) == (extno/sb->extents))
+       && isMatching(user,name,ext,sb->dir[start].status,sb->dir[start].name,sb->dir[start].ext)
+-    ) return start;
+-  }
++      ) return start;
++     }
+   boo="file not found";
+   return -1;
+ }
+-/*}}}*/
+-/* findFreeExtent     -- find first free extent                  */ /*{{{*/
++
++/*============================================================================*/
++/* findFreeExtent     -- find first free extent                  */
++/*============================================================================*/
+ static int findFreeExtent(const struct cpmSuperBlock *drive)
+ {
+   int i;
+ 
+-  for (i=0; i<drive->maxdir; ++i) if (drive->dir[i].status==(char)0xe5) return (i);
++  for (i=0; i<drive->maxdir; ++i)
++     if (drive->dir[i].status==(char)0xe5)
++        return (i);
++
+   boo="directory full";
+   return -1;
+ }
+-/*}}}*/
+-/* updateTimeStamps   -- convert time stamps to CP/M format      */ /*{{{*/
++
++/*============================================================================*/
++/* updateTimeStamps   -- convert time stamps to CP/M format      */
++/*============================================================================*/
+ static void updateTimeStamps(const struct cpmInode *ino, int extent)
+ {
+   struct PhysDirectoryEntry *date;
+@@ -396,9 +576,10 @@
+   unix2cpm_time(ino->mtime,&u_days,&u_hour,&u_min);
+   if ((ino->sb->type==CPMFS_P2DOS || ino->sb->type==CPMFS_DR3) && (date=ino->sb->dir+(extent|3))->status==0x21)
+   {
++    ino->sb->dirtyDirectory=1; /* uBee (MH 2.13) 2010/04/03 */
+     switch (extent&3)
+     {
+-      case 0: /* first entry */ /*{{{*/
++      case 0: /* first entry */
+       {
+         date->name[0]=ca_days&0xff; date->name[1]=ca_days>>8;
+         date->name[2]=ca_hour;
+@@ -408,8 +589,8 @@
+         date->name[7]=u_min;
+         break;
+       }
+-      /*}}}*/
+-      case 1: /* second entry */ /*{{{*/
++     
++      case 1: /* second entry */
+       {
+         date->ext[2]=ca_days&0xff; date->extnol=ca_days>>8;
+         date->lrc=ca_hour;
+@@ -419,8 +600,8 @@
+         date->pointers[2]=u_min;
+         break;
+       }
+-      /*}}}*/
+-      case 2: /* third entry */ /*{{{*/
++     
++      case 2: /* third entry */
+       {
+         date->pointers[5]=ca_days&0xff; date->pointers[6]=ca_days>>8;
+         date->pointers[7]=ca_hour;
+@@ -430,233 +611,520 @@
+         date->pointers[12]=u_min;
+         break;
+       }
+-      /*}}}*/
+     }
+   }
+ }
+-/*}}}*/
+ 
+-/* diskdefReadSuper   -- read super block from diskdefs file     */ /*{{{*/
++/*============================================================================*/
++/* diskdefReadSuper   -- read super block from diskdefs file     */
++/*============================================================================*/
+ static int diskdefReadSuper(struct cpmSuperBlock *d, const char *format)
+ {
+-  char line[256];
+-  FILE *fp;
+-  int insideDef=0,found=0;
++#ifdef TEST_SIDEDNESS
++ int cyl, head;
++ int tt;
++#endif
+ 
+-  if ((fp=fopen(DISKDEFS,"r"))==(FILE*)0 && (fp=fopen("diskdefs","r"))==(FILE*)0)
+-  {
+-    fprintf(stderr,"%s: Neither " DISKDEFS " nor diskdefs could be opened.\n",cmd);
+-    exit(1);
+-  }
+-  while (fgets(line,sizeof(line),fp)!=(char*)0)
+-  {
+-    int argc;
+-    char *argv[2];
++ /* 2010/08/28 uBee - Need to use the programs root directory for the
++  * diskdefs file on win32 */
++
++ char diskdefs[512];
++
++#ifdef _WIN32
++ int i;
++#else
++ char *s;  
++#endif
++
++ char line[256];
++  
++ FILE *fp;
++ int insideDef=0,found=0;
++  
++ d->skewstart=1;           /* uBee 2009/09/28 */
++ d->datasect=1;            /* uBee 2009/09/28 */
++ d->heads=1;               /* uBee 2009/09/28 */
++ d->testside=0;            /* uBee 2009/09/28 */
++ d->cylinders=0;           /* uBee 2009/09/28 */
++ d->fm=0;                  /* uBee 2010/03/17 */
++ d->datarate=-1;           /* uBee 2016/07/12 */
++ d->sidedness=0;           /* uBee 2014/02/03 */
++ d->sideoffs=0;            /* uBee 2015/01/13 */
++
++/* 2010/08/28 uBee - Need to use the programs root directory for the diskdefs file on win32 */
++#ifdef _WIN32
++ /* get the path and executable filename */
++ if (GetModuleFileName(NULL, diskdefs, sizeof(diskdefs)) == 0)
++    {
++     fprintf(stderr, "cpmtools: Unable to find the executable path.\n");
++     exit(1);
++    }
++ /* delete the executable name part and last '\' character */
++ i = strlen(diskdefs);
++ while (diskdefs[--i] != '\\')
++    {}
++ diskdefs[i] = 0;
++ 
++ /* 2016/07/16 uBee first check will be for 'diskdefsp' for disk definitions */
++ strcat(diskdefs, "\\diskdefsp");
++
++ /* 2016/07/16 uBee 'cmd' is the name of the application, i.e: cpmls, cpmcp, etc */
++ if ((fp=fopen(diskdefs,"r"))==(FILE*)0 && (fp=fopen("diskdefsp","r"))==(FILE*)0)
++    {
++     /* 2016/07/16 uBee now try for the normal 'diskdefs' name */
++     diskdefs[strlen(diskdefs) - 1] = 0; /* remove the 'p' to make 'diskdefs' */
++     if ((fp=fopen(diskdefs,"r"))==(FILE*)0 && (fp=fopen("diskdefs","r"))==(FILE*)0)
++        {
++         fprintf(stderr,"%s: Neither %s(p) nor .\\diskdefs(p) could be opened.\n", cmd, diskdefs);
++         exit(1);
++        }
++    }
++#else
+ 
+-    for (argc=0; argc<1 && (argv[argc]=strtok(argc ? (char*)0 : line," \t\n")); ++argc);
+-    if ((argv[argc]=strtok((char*)0,"\n"))!=(char*)0) ++argc;
+-    if (insideDef)
+-    {
+-      if (argc==1 && strcmp(argv[0],"end")==0)
+-      {
+-        insideDef=0;
+-        d->size=(d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
+-        if (d->extents==0) d->extents=((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
+-        if (d->extents==0) d->extents=1;
+-        if (found) break;
+-      }
+-      else if (argc==2)
+-      {
+-        if (strcmp(argv[0],"seclen")==0) d->secLength=strtol(argv[1],(char**)0,0);
+-        else if (strcmp(argv[0],"tracks")==0) d->tracks=strtol(argv[1],(char**)0,0);
+-        else if (strcmp(argv[0],"sectrk")==0) d->sectrk=strtol(argv[1],(char**)0,0);
+-        else if (strcmp(argv[0],"blocksize")==0) d->blksiz=strtol(argv[1],(char**)0,0);
+-        else if (strcmp(argv[0],"maxdir")==0) d->maxdir=strtol(argv[1],(char**)0,0);
+-        else if (strcmp(argv[0],"skew")==0) d->skew=strtol(argv[1],(char**)0,0);
+-        else if (strcmp(argv[0],"boottrk")==0) d->boottrk=strtol(argv[1],(char**)0,0);
+-        else if (strcmp(argv[0],"logicalextents")==0) d->extents=strtol(argv[1],(char**)0,0);
+-        else if (strcmp(argv[0],"os")==0)
++ /* 2014/01/14 uBee - Add the user's home account as a possible option */
++ s = getenv("HOME");
++ if (s)
++    {
++     /* 2016/07/16 uBee first check will be for 'diskdefsp' for disk definitions */
++     sprintf(diskdefs, "%s/.diskdefsp", s);
++     fp = fopen(diskdefs, "r");
++     if (! fp)
+         {
+-          if (strcmp(argv[1],"2.2")==0) d->type=CPMFS_DR22;
+-          else if (strcmp(argv[1],"3")==0) d->type=CPMFS_DR3;
+-          else if (strcmp(argv[1],"p2dos")==0) d->type=CPMFS_P2DOS;
++         /* 2016/07/16 uBee now try for the normal 'diskdefs' name */
++         sprintf(diskdefs, "%s/.diskdefs", s);
++         fp = fopen(diskdefs, "r");
+         }
+-      }
+-      else if (argc>0 && argv[0][0]!='#')
+-      {
+-        fprintf(stderr,"%s: invalid keyword `%s'\n",cmd,argv[0]);
+-        exit(1);
+-      }
+     }
+-    else if (argc==2 && strcmp(argv[0],"diskdef")==0)
++ else
++    fp = NULL;
++
++ if (! fp)
++    {
++     fp = fopen("diskdefsp", "r");  /* 2nd try is current directory */
++     if (! fp)
++        fp = fopen("diskdefs", "r");
++    }
++    
++ if (! fp)
++    fp = fopen(DISKDEFS, "r");    /* 3rd try is directory as defined in build */
++
++ if (! fp)
+     {
+-      insideDef=1;
+-      d->skew=1;
+-      d->extents=0;
+-      d->type=CPMFS_DR3;
+-      if (strcmp(argv[1],format)==0) found=1;
++     fprintf(stderr,"%s: Unable to find a '.diskdefs(p)', or 'diskdefs(p)' file\n", cmd);
++     fprintf(stderr,"%s: in home account, " DISKDEFS " or the current directory.\n", cmd);
++     exit(1);
+     }
+-  }
+-  fclose(fp);
+-  if (!found)
+-  {
+-    fprintf(stderr,"%s: unknown format %s\n",cmd,format);
+-    exit(1);
+-  }
+-  return 0;
++#endif
++
++ while (fgets(line,sizeof(line),fp) != (char*)0)
++    {
++     int argc;
++     char *argv[2];
++
++     for (argc = 0; argc < 1 && (argv[argc] = strtok(argc ? (char*)0 : line," \t\n")); ++argc);
++     
++     if ((argv[argc] = strtok((char*)0,"\n")) != (char*)0)
++        ++argc;
++
++     if (insideDef)
++        {
++         if (argc==1 && strcmp(argv[0],"end")==0)
++            {
++             /* if the cylinders parameter was used then we use that to work out the number of tracks
++             from the heads parameter which should also be specified if more than 1. uBee 2009/09/28 */
++             if (d->cylinders)                       /* uBee 2009/09/28 */
++                d->tracks = d->cylinders * d->heads; /* uBee 2009/09/28 */
++
++             /* uBee 2015/01/13 - if side offset specified then the test sides is implied */
++             if (d->sideoffs)
++                d->testside = 1;
++
++             insideDef=0;
++             d->size = (d->secLength * d->sectrk * (d->tracks - d->boottrk)) / d->blksiz;
++
++             if (d->extents == 0)
++                d->extents = ((d->size >= 256 ? 8 : 16) * d->blksiz) / 16384;
++             if (d->extents == 0)
++                d->extents =1;
++             if (found)
++                break;
++            }
++
++        else if (argc==2)
++           {
++            if (strcmp(argv[0],"seclen")==0) d->secLength=strtol(argv[1],(char**)0,0);
++            else if (strcmp(argv[0],"tracks")==0) d->tracks=strtol(argv[1],(char**)0,0);
++            else if (strcmp(argv[0],"sectrk")==0) d->sectrk=strtol(argv[1],(char**)0,0);
++            else if (strcmp(argv[0],"blocksize")==0) d->blksiz=strtol(argv[1],(char**)0,0);
++            else if (strcmp(argv[0],"maxdir")==0) d->maxdir=strtol(argv[1],(char**)0,0);
++            else if (strcmp(argv[0],"skew")==0) d->skew=strtol(argv[1],(char**)0,0);
++            else if (strcmp(argv[0],"skewstart")==0) d->skewstart=strtol(argv[1],(char**)0,0);        /* uBee 2009/09/28 */
++            else if (strcmp(argv[0],"datasect")==0) d->datasect=strtol(argv[1],(char**)0,0);          /* uBee 2009/09/28 */
++            else if (strcmp(argv[0],"cylinders")==0) d->cylinders=strtol(argv[1],(char**)0,0);        /* uBee 2009/09/28 */
++            else if (strcmp(argv[0],"fm")==0) d->fm=strtol(argv[1],(char**)0,0);                      /* uBee 2010/03/17 */
++            else if (strcmp(argv[0],"datarate")==0) d->datarate=strtol(argv[1],(char**)0,0);          /* uBee 2016/07/11 */
++            else if (strcmp(argv[0],"heads")==0) d->heads=strtol(argv[1],(char**)0,0);                /* uBee 2009/09/28 */
++            else if (strcmp(argv[0],"testside")==0) d->testside=strtol(argv[1],(char**)0,0);          /* uBee 2009/09/28 */
++            else if (strcmp(argv[0],"boottrk")==0) d->boottrk=strtol(argv[1],(char**)0,0);
++            else if (strcmp(argv[0],"logicalextents")==0) d->extents=strtol(argv[1],(char**)0,0);
++            else if (strcmp(argv[0],"sidedness")==0) d->sidedness=strtol(argv[1],(char**)0,0);        /* uBee 2014/02/03 */
++            else if (strcmp(argv[0],"sideoffs")==0) d->sideoffs=strtol(argv[1],(char**)0,0);          /* uBee 2015/01/13 */
++            else if (strcmp(argv[0],"os")==0)
++               {
++                if (strcmp(argv[1],"2.2")==0) d->type=CPMFS_DR22;
++                else if (strcmp(argv[1],"3")==0) d->type=CPMFS_DR3;
++                else if (strcmp(argv[1],"p2dos")==0) d->type=CPMFS_P2DOS;
++               }
++           }
++        
++        else if (argc > 0 && argv[0][0] != '#')
++           {
++            fprintf(stderr,"%s: invalid keyword `%s'\n",cmd,argv[0]);
++            exit(1);
++           }
++        }
++        
++      else
++         if (argc == 2 && strcmp(argv[0],"diskdef") == 0)
++            {
++             insideDef=1;
++             d->skew=1;
++             d->skewstart=1;         /* uBee 2009/09/28 */
++             d->datasect=1;          /* uBee 2009/09/28 */
++             d->heads=1;             /* uBee 2009/09/28 */
++             d->testside=0;          /* uBee 2009/09/28 */
++             d->cylinders=0;         /* uBee 2009/09/28 */
++             d->fm=0;                /* uBee 2010/03/17 */
++             d->datarate=-1;         /* uBee 2016/07/11 */
++             d->sidedness=0;         /* uBee 2014/02/03 */
++             d->sideoffs=0;          /* uBee 2015/01/13 */             
++             d->extents=0;
++             d->type=CPMFS_DR3;
++             if (strcmp(argv[1],format) == 0)
++                found=1;
++            }
++    }
++ 
++ fclose(fp);
++ if (! found)
++    {
++     fprintf(stderr,"%s: unknown format %s\n",cmd,format);
++     exit(1);
++    }
++
++ /* uBee 20161/11/11 - if 'rcpmfs' force skew and datasect values to 1 */
++ if (rcpmfs)
++    {
++     d->skew=1;
++     d->skewstart=1;
++     d->datasect=1;
++    }
++
++#ifdef TEST_SIDEDNESS
++ /* 2014/02/04 uBee - test the sidedness feature */
++ printf("Tracks=%d Cylinders=%d Heads=%d Sidedness=%d\n",
++ d->tracks, d->cylinders, d->heads, d->sidedness);
++ 
++ for (tt = 0; tt < d->tracks; tt++)
++    {
++     get_physical_values(d->cylinders, d->heads, d->sidedness, tt, &cyl, &head);
++/*     printf("T=%02d C=%02d H=%d\n", tt, cyl, head); */
++    }
++#endif
++
++ return 0;
+ }
+-/*}}}*/
+-/* amsReadSuper       -- read super block from amstrad disk      */ /*{{{*/
++
++/*============================================================================*/
++/* amsReadSuper       -- read super block from amstrad disk      */
++/*============================================================================*/
+ static int amsReadSuper(struct cpmSuperBlock *d, const char *format)
+ {
+-  unsigned char boot_sector[512], *boot_spec;
+-  const char *err;
++ unsigned char boot_sector[512], *boot_spec;
++ const char *err;
+ 
+-  Device_setGeometry(&d->dev,512,9,40);
+-  if ((err=Device_readSector(&d->dev, 0, 0, (char *)boot_sector)))
+-  {
+-    fprintf(stderr,"%s: Failed to read Amstrad superblock (%s)\n",cmd,err);
+-    exit(1);
+-  }
+-  boot_spec=(boot_sector[0] == 0 || boot_sector[0] == 3)?boot_sector:(unsigned char*)0;
+-  /* Check for JCE's extension to allow Amstrad and MSDOS superblocks
+-   * in the same sector (for the PCW16)
+-   */
+-  if
++ d->secLength = 512; /* uBee 2016/07/12 */
++ d->sectrk = 9;      /* uBee 2016/07/12 */
++ d->tracks = 40;     /* uBee 2016/07/12 */
++ 
++ Device_setGeometry(&d->dev, d);  /* uBee 2016/07/12 */
++
++/* uBee 2010/02/27
++   Need to also pass the logical sector number to make 'remote' work on CP/M 3.
++   (For here we just shove in a 0 for the 4th parameter)
++*/
++/*  if ((err=Device_readSector(&d->dev, 0, 0, (char *)boot_sector))) */
++ if ((err=Device_readSector(&d->dev, 0, 0, 0, 0, (char *)boot_sector)))
++    {
++     fprintf(stderr,"%s: Failed to read Amstrad superblock (%s)\n",cmd,err);
++     exit(1);
++    }
++ 
++ boot_spec=(boot_sector[0] == 0 || boot_sector[0] == 3)?boot_sector:(unsigned char*)0;
++
++ /* Check for JCE's extension to allow Amstrad and MSDOS superblocks in the
++ * same sector (for the PCW16)
++ */
++
++ if
+   (
+-    (boot_sector[0] == 0xE9 || boot_sector[0] == 0xEB)
++   (boot_sector[0] == 0xE9 || boot_sector[0] == 0xEB)
+     && !memcmp(boot_sector + 0x2B, "CP/M", 4)
+     && !memcmp(boot_sector + 0x33, "DSK",  3)
+     && !memcmp(boot_sector + 0x7C, "CP/M", 4)
+-  ) boot_spec = boot_sector + 128;
+-  if (boot_spec==(unsigned char*)0)
+-  {
+-    fprintf(stderr,"%s: Amstrad superblock not present\n",cmd);
+-    exit(1);
+-  }
+-  /* boot_spec[0] = format number: 0 for SS SD, 3 for DS DD
+-              [1] = single/double sided and density flags
+-              [2] = cylinders per side
+-              [3] = sectors per cylinder
+-              [4] = Physical sector shift, 2 => 512
+-              [5] = Reserved track count
+-              [6] = Block shift
+-              [7] = No. of directory blocks
+-   */
+-  d->type = CPMFS_DR3;	/* Amstrads are CP/M 3 systems */
+-  d->secLength = 128 << boot_spec[4];
+-  d->tracks    = boot_spec[2];
+-  if (boot_spec[1] & 3) d->tracks *= 2;
+-  d->sectrk    = boot_spec[3];
+-  d->blksiz    = 128 << boot_spec[6];
+-  d->maxdir    = (d->blksiz / 32) * boot_spec[7];
+-  d->skew      = 1; /* Amstrads skew at the controller level */
+-  d->boottrk   = boot_spec[5];
+-  d->size      = (d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz;
+-  d->extents   = ((d->size>=256 ? 8 : 16)*d->blksiz)/16384;
++  )
++  boot_spec = boot_sector + 128;
++     
++ if (boot_spec == (unsigned char*)0)
++    {
++     fprintf(stderr,"%s: Amstrad superblock not present\n",cmd);
++     exit(1);
++    }
++
++ /* boot_spec[0] = format number: 0 for SS SD, 3 for DS DD
++             [1] = single/double sided and density flags
++             [2] = cylinders per side
++             [3] = sectors per cylinder
++             [4] = Physical sector shift, 2 => 512
++             [5] = Reserved track count
++             [6] = Block shift
++             [7] = No. of directory blocks
++ */
+  
+-  return 0;
+-}
+-/*}}}*/
+-
+-/* match              -- match filename against a pattern        */ /*{{{*/
++ d->type = CPMFS_DR3;	/* Amstrads are CP/M 3 systems */
++ d->secLength = 128 << boot_spec[4];
++ d->tracks    = boot_spec[2];
++
++ if (boot_spec[1] & 3)
++    d->tracks *= 2;
++
++ d->sectrk    = boot_spec[3];
++ d->blksiz    = 128 << boot_spec[6];
++ d->maxdir    = (d->blksiz / 32) * boot_spec[7];
++ d->skew      = 1; /* Amstrads skew at the controller level */
++ d->skewstart = 1; /* uBee 2009/09/28 */
++ d->datasect  = 1; /* uBee 2009/09/28 */
++ d->heads     = 1; /* uBee 2009/09/28 */
++ d->testside  = 0; /* uBee 2009/09/28 */
++ d->fm        = 0; /* uBee 2010/03/17 */
++ d->datarate  = -1; /* uBee 2016/07/11 */
++ d->sidedness = 0; /* uBee 2014/02/03 */
++ d->sideoffs  = 0; /* uBee 2015/01/13 */
++ d->boottrk   = boot_spec[5];
++ d->size      = (d->secLength * d->sectrk * (d->tracks - d->boottrk)) / d->blksiz;
++ d->extents   = ((d->size >= 256 ? 8 : 16) * d->blksiz) / 16384;
++
++ return 0;
++}
++
++/*============================================================================*/
++/* match              -- match filename against a pattern        */
++/*============================================================================*/
+ static int recmatch(const char *a, const char *pattern)
+ {
+-  int first=1;
++ int first = 1;
+ 
+-  while (*pattern)
+-  {
+-    switch (*pattern)
++ while (*pattern)
+     {
+-      case '*':
+-      {
+-        if (*a=='.' && first) return 1;
+-        ++pattern;
+-        while (*a) if (recmatch(a,pattern)) return 1; else ++a;
+-        break;
+-      }
+-      case '?':
+-      {
+-        if (*a) { ++a; ++pattern; } else return 0;
+-        break;
+-      }
+-      default: if (tolower(*a)==tolower(*pattern)) { ++a; ++pattern; } else return 0;
++     switch (*pattern)
++        {
++         case '*':
++            {
++             if (*a == '.' && first)
++                return 1;
++             ++pattern;
++             while (*a)
++                if (recmatch(a, pattern))
++                   return 1;
++                else
++                   ++a;
++             break;
++            }
++         case '?':
++            {
++             if (*a)
++                {
++                 ++a;
++                 ++pattern;
++                }
++             else
++                return 0;
++             break;
++            }
++         default:
++            if (tolower(*a) == tolower(*pattern))
++               {
++                ++a;
++                ++pattern;
++               }
++            else
++               return 0;
++        }
++     first=0;
+     }
+-    first=0;
+-  }
+-  return (*pattern=='\0' && *a=='\0');
++ return (*pattern == '\0' && *a == '\0');
+ }
+ 
++/*============================================================================*/
++/* 2015/01/10 uBee - See cpmglob notes below concerning Unix filename
++ * Globbing.  */
++/*============================================================================*/
+ int match(const char *a, const char *pattern) 
+ {
+-  int user;
+-  char pat[255];
+-
+-  assert(strlen(pattern)<255);
+-  if (isdigit(*pattern) && *(pattern+1)==':') { user=(*pattern-'0'); pattern+=2; }
+-  else if (isdigit(*pattern) && isdigit(*(pattern+1)) && *(pattern+2)==':') { user=(10*(*pattern-'0')+(*(pattern+1)-'0')); pattern+=3; }
+-  else user=-1;
+-  if (user==-1) sprintf(pat,"??%s",pattern);
+-  else sprintf(pat,"%02d%s",user,pattern);
+-  return recmatch(a,pat);
+-}
++ int user;
++ char pat[255];
+ 
+-/*}}}*/
+-/* cpmglob            -- expand CP/M style wildcards             */ /*{{{*/
+-void cpmglob(int optin, int argc, char * const argv[], struct cpmInode *root, int *gargc, char ***gargv)
+-{
+-  struct cpmFile dir;
+-  int entries,dirsize=0;
+-  struct cpmDirent *dirent=(struct cpmDirent*)0;
+-  int gargcap=0,i,j;
++ assert(strlen(pattern) < 255);
++ 
++ if (isdigit(*pattern) && *(pattern + 1) == ':')
++    {
++     user = (*pattern - '0');
++        pattern += 2;
++    }
++ else
++    if (isdigit(*pattern) && isdigit(*(pattern + 1)) && *(pattern + 2) == ':')
++       {
++        user = (10 * (*pattern - '0') + (*(pattern + 1) -'0'));
++        pattern += 3;
++       }
++    else
++       user = -1;
+ 
+-  *gargv=(char**)0;
+-  *gargc=0;
+-  cpmOpendir(root,&dir);
+-  entries=0;
+-  dirsize=8;
+-  dirent=malloc(sizeof(struct cpmDirent)*dirsize);
+-  while (cpmReaddir(&dir,&dirent[entries]))
+-  {
+-    ++entries;
+-    if (entries==dirsize) dirent=realloc(dirent,sizeof(struct cpmDirent)*(dirsize*=2));
+-  }
+-  for (i=optin; i<argc; ++i)
+-  {
+-    int found;
++ if (user == -1)
++    {
++     /* 2015/01/10 uBee - make an empty pattern or '*.*' use '*' */
++     if (! *pattern || strstr(pattern, "*.*") == pattern)
++        sprintf(pat, "??*");
++     else
++        sprintf(pat, "??%s", pattern);
++    }
++ else
++    {
++     /* 2015/01/10 uBee - make an empty pattern or '*.*' use '*' */
++     if (! *pattern || strstr(pattern, "*.*") == pattern)
++        sprintf(pat,"%02d*", user);
++     else
++        sprintf(pat,"%02d%s", user, pattern);
++    }
++
++#if 0
++ /* 2016/11/01 uBee */
++ printf("match(): pattern=|%s| pat=|%s| user=%d\n", pattern, pat, user);
++#endif 
++
++ return recmatch(a, pat);
++}
++
++/*============================================================================*/
++/* cpmglob            -- expand CP/M style wildcards                          */
++
++/* 2015/01/10 uBee - Unix uses command line globbing which when referring to
++ * files on the CP/M disk is not desirable and causes problems with
++ * wildcards (will pass matched files in host directory), if a 'u:' is
++ * prefixed then not likely to be a problem, to avoid the problem completely
++ * double quotes should be used.
++ * 
++ * When refering to host files the wildcard globbing action may be desirable.
++ */
++/*============================================================================*/
++void cpmglob(int optin, int argc, char * const argv[], struct cpmInode *root,
++             int *gargc, char ***gargv)
++{
++ struct cpmFile dir;
++ int entries,dirsize=0;
++ struct cpmDirent *dirent=(struct cpmDirent*)0;
++ int gargcap=0,i,j;
++
++ *gargv=(char**)0;
++ *gargc=0;
++ cpmOpendir(root,&dir);
++ entries=0;
++ dirsize=8;
+ 
+-    for (j=0,found=0; j<entries; ++j)
++ dirent=malloc(sizeof(struct cpmDirent)*dirsize);
++ 
++ while (cpmReaddir(&dir,&dirent[entries]))
+     {
+-      if (match(dirent[j].name,argv[i]))
+-      {
+-        if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
+-        (*gargv)[*gargc]=strcpy(malloc(strlen(dirent[j].name)+1),dirent[j].name);
+-        ++*gargc;
+-        ++found;
+-      }
++     ++entries;
++     if (entries == dirsize)
++        dirent = realloc(dirent, sizeof(struct cpmDirent) * (dirsize *= 2));
+     }
+-    if (found==0)
++
++ for (i = optin; i < argc; ++i)
+     {
+-      char pat[255];
+-      char *pattern=argv[i];
+-      int user;
++     int found;
++
++     for (j = 0, found = 0; j < entries; ++j)
++        {
++#if 0
++         /* 2016/11/01 uBee */
++         printf("cpmglob(): argv[%d]=|%s| j=%d\n", i, argv[i], j);
++#endif
++         if (match(dirent[j].name, argv[i]))
++            {
++             if (*gargc == gargcap)
++                *gargv = realloc(*gargv, sizeof(char*) *
++                (gargcap ? (gargcap *= 2 ) : (gargcap = 16)));
++             
++             (*gargv)[*gargc] = strcpy(malloc(strlen(dirent[j].name) + 1),
++             dirent[j].name);
++             
++             ++*gargc;
++             ++found;
++            }
++        }
+ 
+-      if (isdigit(*pattern) && *(pattern+1)==':') { user=(*pattern-'0'); pattern+=2; }
+-      else if (isdigit(*pattern) && isdigit(*(pattern+1)) && *(pattern+2)==':') { user=(10*(*pattern-'0')+(*(pattern+1)-'0')); pattern+=3; }
+-      else user=-1;
+-      if (user==-1) sprintf(pat,"??%s",pattern);
+-      else sprintf(pat,"%02d%s",user,pattern);
++    if (found == 0)
++       {
++        char pat[255];
++        char *pattern=argv[i];
++        int user;
++
++        if (isdigit(*pattern) && *(pattern + 1) == ':')
++           {
++            user = (*pattern - '0');
++            pattern += 2;
++           }
++        else
++           if (isdigit(*pattern) && isdigit(*(pattern + 1)) && *(pattern + 2) == ':')
++              {
++               user = (10 * (*pattern - '0') + (*(pattern +1 ) - '0'));
++               pattern+=3;
++              }
++           else
++              user = -1;
++
++        /* 2015/01/10 uBee - make an empty pattern or '*.*' use '*' */
++        if (user == -1)
++           {
++            if (! *pattern || strstr(pattern, "*.*") == pattern)
++               sprintf(pat, "??*");
++            else
++               sprintf(pat, "??%s", pattern);
++           }
++        else
++           {
++            if (! *pattern || strstr(pattern, "*.*") == pattern)
++               sprintf(pat, "%02d*", user);
++            else
++               sprintf(pat,"%02d%s", user, pattern);
++           }
++
++        if (*gargc == gargcap)
++           *gargv = realloc(*gargv, sizeof(char*) * (gargcap ? (gargcap *= 2) : (gargcap = 16)));
++           
++        (*gargv)[*gargc] = strcpy(malloc(strlen(pat) + 1), pat);
+ 
+-      if (*gargc==gargcap) *gargv=realloc(*gargv,sizeof(char*)*(gargcap ? (gargcap*=2) : (gargcap=16)));
+-      (*gargv)[*gargc]=strcpy(malloc(strlen(pat)+1),pat);
+-      ++*gargc;
++        ++*gargc;
++       }
+     }
+-  }
+-  free(dirent);
++
++ free(dirent);
+ }
+-/*}}}*/
+ 
+-/* cpmReadSuper       -- get DPB and init in-core data for drive */ /*{{{*/
++/*============================================================================*/
++/* cpmReadSuper       -- get DPB and init in-core data for drive */
++/*============================================================================*/
+ int cpmReadSuper(struct cpmSuperBlock *d, struct cpmInode *root, const char *format)
+ {
+   while (s_ifdir && !S_ISDIR(s_ifdir)) s_ifdir<<=1;
+@@ -665,9 +1133,11 @@
+   assert(s_ifreg);
+   if (strcmp(format, "amstrad")==0) amsReadSuper(d,format);
+   else diskdefReadSuper(d,format);
+-  Device_setGeometry(&d->dev,d->secLength,d->sectrk,d->tracks);
+-  /* generate skew table */ /*{{{*/
+-  if (( d->skewtab = malloc(d->sectrk*sizeof(int))) == (int*)0) 
++
++  Device_setGeometry(&d->dev, d);  /* uBee 2016/07/12 */
++
++  /* generate skew table */
++  if ((d->skewtab = malloc(d->sectrk * sizeof(int))) == (int*)0) 
+   {
+     fprintf(stderr,"%s: can not allocate memory for skew sector table\n",cmd);
+     exit(1);
+@@ -675,58 +1145,103 @@
+   if (strcmp(format,"apple-do")==0)
+   {
+     static int skew[]={0,6,12,3,9,15,14,5,11,2,8,7,13,4,10,1};
+-    memcpy(d->skewtab,skew,d->sectrk*sizeof(int));
++    memcpy(d->skewtab,skew,d->sectrk * sizeof(int));
+   }
+   else if (strcmp(format,"apple-po")==0)
+   {
+     static int skew[]={0,9,3,12,6,15,1,10,4,13,7,8,2,11,5,14};
+-    memcpy(d->skewtab,skew,d->sectrk*sizeof(int));
++    memcpy(d->skewtab,skew,d->sectrk * sizeof(int));
+   }
+   else
+   {
+     int	i,j,k;
+-
+-    for (i=j=0; i<d->sectrk; ++i,j=(j+d->skew)%d->sectrk)
+-    {
+-      while (1)
+-      {
+-        for (k=0; k<i && d->skewtab[k]!=j; ++k);
+-        if (k<i) j=(j+1)%d->sectrk;
+-        else break;
+-      }
+-      d->skewtab[i]=j;
+-    }
++    
++/*  Changes here to make the skew algorithm more flexible so that other disk formats can
++    be accessed. uBee 2009/09/28
++*/ 
++    j = d->skewstart - d->datasect; /* uBee 2009/09/28 */
++
++/*    for (i=j=0; i<d->sectrk; ++i,j=(j+d->skew)%d->sectrk) uBee 2009/09/28 */
++    for (i = 0; i < d->sectrk; ++i, j = (j + d->skew) % d->sectrk)  /* uBee 2009/09/28 */
++       {
++        while (1)
++           {
++            for (k = 0; k < i && d->skewtab[k] != j; ++k);
++            if (k < i)
++               j = (j+1) % d->sectrk;
++            else
++               break;
++           }
++        d->skewtab[i] = j;
++       }
++
++/*  Convert the 0 based values to the actual physical sector values. uBee 2009/09/28 */
++    for (i = 0; i < d->sectrk; ++i)    /* uBee 2009/09/28 */
++       {                               /* uBee 2009/09/28 */
++        d->skewtab[i] += d->datasect;  /* uBee 2009/09/28 */
++#if 0
++        printf("%d ", d->skewtab[i]);  /* uBee 2009/09/28 - DEBUGGING USE*/
++#endif
++       }                               /* uBee 2009/09/28 */
++#if 0
++    printf("\n"); /* uBee 2009/09/28 - DEBUGGING USE*/
++#endif
++  
+   }
+-  /*}}}*/
+-  /* initialise allocation vector bitmap */ /*{{{*/
++ 
++  /* initialise allocation vector bitmap */
+   {
+-    d->alvSize=((d->secLength*d->sectrk*(d->tracks-d->boottrk))/d->blksiz+INTBITS-1)/INTBITS;
++    d->alvSize=((d->secLength * d->sectrk * (d->tracks - d->boottrk)) / d->blksiz + INTBITS-1) / INTBITS;
+     if ((d->alv=malloc(d->alvSize*sizeof(int)))==(int*)0) 
+     {
+       boo="out of memory";
+       return -1;
+     }
+   }
+-  /*}}}*/
+-  /* allocate directory buffer */ /*{{{*/
++ 
++  /* allocate directory buffer */
+   if ((d->dir=malloc(d->maxdir*32))==(struct PhysDirectoryEntry*)0)
+   {
+     boo="out of memory";
+     return -1;
+   }
+-  /*}}}*/
++ 
++
++  /* uBee (MH 2.13) 2010/04/03
+   if (d->dev.opened==0) memset(d->dir,0xe5,d->maxdir*32);
+   else if (readPhysDirectory(d)==-1) return -1;
++  */
++  if (d->dev.opened==0) /* create empty directory in core */
++  {
++    memset(d->dir,0xe5,d->maxdir*32);
++  }
++ 
++  else /* read directory in core */
++  {
++    int i,blocks,entry;
++
++    blocks=(d->maxdir*32+d->blksiz-1)/d->blksiz;
++    entry=0;
++    for (i=0; i<blocks; ++i) 
++    {
++      if (readBlock(d,i,(char*)(d->dir+entry),0,-1)==-1) return -1;
++      entry+=(d->blksiz/32);
++    }
++  }
++ 
++  /* uBee (MH 2.13) 2010/04/03 - end */
++
+   alvInit(d);
+-  if (d->type==CPMFS_DR3) /* read additional superblock information */ /*{{{*/
++  if (d->type==CPMFS_DR3) /* read additional superblock information */
+   {
+     int i;
+ 
+-    /* passwords */ /*{{{*/
++    /* passwords */
+     {
+       int passwords=0;
+ 
+-      for (i=0; i<d->maxdir; ++i) if (d->dir[i].status>=16 && d->dir[i].status<=31) ++passwords;
++      for (i=0; i<d->maxdir; ++i) if (d->dir[i].status>=16 && d->dir[i].status<=31)
++          ++passwords;
+ #ifdef CPMFS_DEBUG
+       fprintf(stderr,"getformat: found %d passwords\n",passwords);
+ #endif
+@@ -737,29 +1252,30 @@
+           boo="out of memory";
+           return -1;
+         }
+-        for (i=0,passwords=0; i<d->maxdir; ++i) if (d->dir[i].status>=16 && d->dir[i].status<=31)
+-        {
+-          int j,pb;
+-          char *p=d->passwd+(passwords++*PASSWD_RECLEN);
+-
+-          p[0]='0'+(d->dir[i].status-16)/10;
+-          p[1]='0'+(d->dir[i].status-16)%10;
+-          for (j=0; j<8; ++j) p[2+j]=d->dir[i].name[j]&0x7f;
+-          p[10]=(d->dir[i].ext[0]&0x7f)==' ' ? ' ' : '.';
+-          for (j=0; j<3; ++j) p[11+j]=d->dir[i].ext[j]&0x7f;
+-          p[14]=' ';
+-          pb=(unsigned char)d->dir[i].lrc;
+-          for (j=0; j<8; ++j) p[15+j]=((unsigned char)d->dir[i].pointers[7-j])^pb;
++        for (i=0,passwords=0; i<d->maxdir; ++i)
++           if (d->dir[i].status>=16 && d->dir[i].status<=31)
++           {
++             int j,pb;
++             char *p=d->passwd+(passwords++*PASSWD_RECLEN);
++
++             p[0]='0'+(d->dir[i].status-16)/10;
++             p[1]='0'+(d->dir[i].status-16)%10;
++             for (j=0; j<8; ++j) p[2+j]=d->dir[i].name[j]&0x7f;
++             p[10]=(d->dir[i].ext[0]&0x7f)==' ' ? ' ' : '.';
++             for (j=0; j<3; ++j) p[11+j]=d->dir[i].ext[j]&0x7f;
++             p[14]=' ';
++             pb=(unsigned char)d->dir[i].lrc;
++             for (j=0; j<8; ++j) p[15+j]=((unsigned char)d->dir[i].pointers[7-j])^pb;
+ #ifdef CPMFS_DEBUG
+-          p[23]='\0';
+-          fprintf(stderr,"getformat: %s\n",p);
++             p[23]='\0';
++             fprintf(stderr,"getformat: %s\n",p);
+ #endif        
+-          p[23]='\n';
+-        }
++             p[23]='\n';
++           }
+       }
+     }
+-    /*}}}*/
+-    /* disc label */ /*{{{*/
++   
++    /* disc label */
+     for (i=0; i<d->maxdir; ++i) if (d->dir[i].status==(char)0x20)
+     {
+       int j;
+@@ -788,9 +1304,9 @@
+       d->cnotatime=1;
+       d->labelLength=0;
+     }
+-    /*}}}*/
++   
+   }
+-  /*}}}*/
++ 
+   else
+   {
+     d->passwdLength=0;
+@@ -805,30 +1321,32 @@
+   root->atime=root->mtime=root->ctime=0;
+   return 0;
+ }
+-/*}}}*/
+-/* cpmNamei           -- map name to inode                       */ /*{{{*/
++
++/*============================================================================*/
++/* cpmNamei           -- map name to inode                       */
++/*============================================================================*/
+ int cpmNamei(const struct cpmInode *dir, const char *filename, struct cpmInode *i)
+ {
+-  /* variables */ /*{{{*/
++  /* variables */
+   int user;
+   char name[8],extension[3];
+   struct PhysDirectoryEntry *date;
+   int highestExtno,highestExt=-1,lowestExtno,lowestExt=-1;
+   int protectMode=0;
+-  /*}}}*/
++ 
+ 
+   if (!S_ISDIR(dir->mode))
+   {
+     boo="No such file";
+     return -1;
+   }
+-  if (strcmp(filename,".")==0 || strcmp(filename,"..")==0) /* root directory */ /*{{{*/
++  if (strcmp(filename,".")==0 || strcmp(filename,"..")==0) /* root directory */
+   {
+     *i=*dir;
+     return 0;
+   }
+-  /*}}}*/
+-  else if (strcmp(filename,"[passwd]")==0 && dir->sb->passwdLength) /* access passwords */ /*{{{*/
++ 
++  else if (strcmp(filename,"[passwd]")==0 && dir->sb->passwdLength) /* access passwords */
+   {
+     i->attr=0;
+     i->ino=dir->sb->maxdir+1;
+@@ -838,8 +1356,8 @@
+     i->size=i->sb->passwdLength;
+     return 0;
+   }
+-  /*}}}*/
+-  else if (strcmp(filename,"[label]")==0 && dir->sb->labelLength) /* access label */ /*{{{*/
++ 
++  else if (strcmp(filename,"[label]")==0 && dir->sb->labelLength) /* access label */
+   {
+     i->attr=0;
+     i->ino=dir->sb->maxdir+2;
+@@ -849,9 +1367,9 @@
+     i->size=i->sb->labelLength;
+     return 0;
+   }
+-  /*}}}*/
++ 
+   if (splitFilename(filename,dir->sb->type,name,extension,&user)==-1) return -1;
+-  /* find highest and lowest extent */ /*{{{*/
++  /* find highest and lowest extent */
+   {
+     int extent;
+ 
+@@ -875,9 +1393,9 @@
+       }
+     }
+   }
+-  /*}}}*/
++ 
+   if (highestExtno==-1) return -1;
+-  /* calculate size */ /*{{{*/
++  /* calculate size */
+   {
+     int block;
+ 
+@@ -896,25 +1414,25 @@
+     fprintf(stderr,"cpmNamei: size=%ld\n",(long)i->size);
+ #endif
+   }
+-  /*}}}*/
++ 
+   i->ino=lowestExt;
+   i->mode=s_ifreg;
+   i->sb=dir->sb;
+-  /* set timestamps */ /*{{{*/
++  /* set timestamps */
+   if 
+   (
+     (dir->sb->type==CPMFS_P2DOS || dir->sb->type==CPMFS_DR3)
+     && (date=dir->sb->dir+(lowestExt|3))->status==0x21
+   )
+   {
+-    /* variables */ /*{{{*/
++    /* variables */
+     int u_days=0,u_hour=0,u_min=0;
+     int ca_days=0,ca_hour=0,ca_min=0;
+-    /*}}}*/
++   
+ 
+     switch (lowestExt&3)
+     {
+-      case 0: /* first entry of the four */ /*{{{*/
++      case 0: /* first entry of the four */
+       {
+         ca_days=((unsigned char)date->name[0])+(((unsigned char)date->name[1])<<8);
+         ca_hour=(unsigned char)date->name[2];
+@@ -925,8 +1443,8 @@
+ 	protectMode=(unsigned char)date->name[8];
+         break;
+       }
+-      /*}}}*/
+-      case 1: /* second entry */ /*{{{*/
++     
++      case 1: /* second entry */
+       {
+         ca_days=((unsigned char)date->ext[2])+(((unsigned char)date->extnol)<<8);
+         ca_hour=(unsigned char)date->lrc;
+@@ -937,8 +1455,8 @@
+         protectMode=(unsigned char)date->pointers[3];
+         break;
+       }
+-      /*}}}*/
+-      case 2: /* third one */ /*{{{*/
++     
++      case 2: /* third one */
+       {
+         ca_days=((unsigned char)date->pointers[5])+(((unsigned char)date->pointers[6])<<8);
+         ca_hour=(unsigned char)date->pointers[7];
+@@ -949,7 +1467,7 @@
+         protectMode=(unsigned char)date->pointers[13];
+         break;
+       }
+-      /*}}}*/
++     
+     }
+     if (i->sb->cnotatime)
+     {
+@@ -964,7 +1482,7 @@
+     i->mtime=cpm2unix_time(u_days,u_hour,u_min);
+   }
+   else i->atime=i->mtime=i->ctime=0;
+-  /*}}}*/
++ 
+ 
+   /* Determine the inode attributes */
+   i->attr = 0;
+@@ -985,8 +1503,10 @@
+   if (extension[0]=='C' && extension[1]=='O' && extension[2]=='M') i->mode|=0111;
+   return 0;
+ }
+-/*}}}*/
+-/* cpmStatFS          -- statfs                                  */ /*{{{*/
++
++/*============================================================================*/
++/* cpmStatFS          -- statfs                                  */
++/*============================================================================*/
+ void cpmStatFS(const struct cpmInode *ino, struct cpmStatFS *buf)
+ {
+   int i;
+@@ -994,10 +1514,10 @@
+ 
+   d=ino->sb;
+   buf->f_bsize=d->blksiz;
+-  buf->f_blocks=(d->tracks*d->sectrk*d->secLength)/d->blksiz;
++  buf->f_blocks=(d->tracks * d->sectrk * d->secLength) / d->blksiz;
+   buf->f_bfree=0;
+-  buf->f_bused=-(d->maxdir*32+d->blksiz-1)/d->blksiz;
+-  for (i=0; i<d->alvSize; ++i)
++  buf->f_bused=-(d->maxdir * 32 + d->blksiz-1) / d->blksiz;
++  for (i = 0; i < d->alvSize; ++i)
+   {
+     int temp,j;
+ 
+@@ -1023,12 +1543,15 @@
+   buf->f_ffree=0;
+   for (i=0; i<d->maxdir; ++i)
+   {
+-    if (d->dir[i].status==(char)0xe5) ++buf->f_ffree;
++    if (d->dir[i].status==(char)0xe5)
++       ++buf->f_ffree;
+   }
+   buf->f_namelen=11;
+ }
+-/*}}}*/
+-/* cpmUnlink          -- unlink                                  */ /*{{{*/
++
++/*============================================================================*/
++/* cpmUnlink          -- unlink                                  */
++/*============================================================================*/
+ int cpmUnlink(const struct cpmInode *dir, const char *fname)
+ {
+   int user;
+@@ -1042,19 +1565,28 @@
+     return -1;
+   }
+   drive=dir->sb;
+-  if (splitFilename(fname,dir->sb->type,name,extension,&user)==-1) return -1;
+-  if ((extent=findFileExtent(drive,user,name,extension,0,-1))==-1) return -1;
++
++  if (splitFilename(fname,dir->sb->type,name,extension,&user)==-1)
++     return -1;
++  if ((extent=findFileExtent(drive,user,name,extension,0,-1))==-1)
++     return -1;
++
++  drive->dirtyDirectory=1; /* uBee (MH 2.13) 2010/04/03 */
+   drive->dir[extent].status=(char)0xe5;
+   do
+   {
+     drive->dir[extent].status=(char)0xe5;
+   } while ((extent=findFileExtent(drive,user,name,extension,extent+1,-1))>=0);
++  /* uBee (MH 2.13) 2010/04/03
+   if (writePhysDirectory(drive)==-1) return -1;
++  */  
+   alvInit(drive);
+   return 0;
+ }
+-/*}}}*/
+-/* cpmRename          -- rename                                  */ /*{{{*/
++
++/*============================================================================*/
++/* cpmRename          -- rename                                  */
++/*============================================================================*/
+ int cpmRename(const struct cpmInode *dir, const char *old, const char *new)
+ {
+   struct cpmSuperBlock *drive;
+@@ -1080,15 +1612,20 @@
+   }
+   do 
+   {
++    drive->dirtyDirectory=1; /* uBee (MH 2.13) 2010/04/03 */
+     drive->dir[extent].status=newuser;
+     memcpy7(drive->dir[extent].name, newname, 8);
+     memcpy7(drive->dir[extent].ext, newext, 3);
+   } while ((extent=findFileExtent(drive,olduser,oldname,oldext,extent+1,-1))!=-1);
++  /* uBee (MH 2.13) 2010/04/03
+   if (writePhysDirectory(drive)==-1) return -1;
++  */  
+   return 0;
+ }
+-/*}}}*/
+-/* cpmOpendir         -- opendir                                 */ /*{{{*/
++
++/*============================================================================*/
++/* cpmOpendir         -- opendir                                 */
++/*============================================================================*/
+ int cpmOpendir(struct cpmInode *dir, struct cpmFile *dirp)
+ {
+   if (!S_ISDIR(dir->mode))
+@@ -1101,27 +1638,28 @@
+   dirp->mode=O_RDONLY;
+   return 0;
+ }
+-/*}}}*/
+-/* cpmReaddir         -- readdir                                 */ /*{{{*/
++
++/*============================================================================*/
++/* cpmReaddir         -- readdir                                 */
++/*============================================================================*/
+ int cpmReaddir(struct cpmFile *dir, struct cpmDirent *ent)
+ {
+-  /* variables */ /*{{{*/
++  /* variables */
+   struct PhysDirectoryEntry *cur=(struct PhysDirectoryEntry*)0;
+   char buf[2+8+1+3+1]; /* 00foobarxy.zzy\0 */
+   int i;
+   char *bufp;
+   int hasext;
+-  /*}}}*/
+-
+-  if (!(S_ISDIR(dir->ino->mode))) /* error: not a directory */ /*{{{*/
++ 
++  if (!(S_ISDIR(dir->ino->mode))) /* error: not a directory */
+   {
+     boo="not a directory";
+     return -1;
+   }
+-  /*}}}*/
++
+   while (1)
+   {
+-    if (dir->pos==0) /* first entry is . */ /*{{{*/
++    if (dir->pos==0) /* first entry is . (uBee 2016/11/01 - So very first dir entry?) */
+     {
+       ent->ino=dir->ino->sb->maxdir;
+       ent->reclen=1;
+@@ -1130,8 +1668,8 @@
+       ++dir->pos;
+       return 1;
+     }
+-    /*}}}*/
+-    else if (dir->pos==1) /* next entry is .. */ /*{{{*/
++
++    else if (dir->pos==1) /* next entry is .. (uBee 2016/11/01 - So another dir extent entry?) */
+     {
+       ent->ino=dir->ino->sb->maxdir;
+       ent->reclen=2;
+@@ -1140,10 +1678,10 @@
+       ++dir->pos;
+       return 1;
+     }
+-    /*}}}*/
++   
+     else if (dir->pos==2)
+     {
+-      if (dir->ino->sb->passwdLength) /* next entry is [passwd] */ /*{{{*/
++      if (dir->ino->sb->passwdLength) /* next entry is [passwd] (uBee 2016/11/01 - This one a CPM3 password dir extent entry?) */
+       {
+         ent->ino=dir->ino->sb->maxdir+1;
+         ent->reclen=8;
+@@ -1152,11 +1690,11 @@
+         ++dir->pos;
+         return 1;
+       }
+-      /*}}}*/
++     
+     }
+     else if (dir->pos==3)
+     {
+-      if (dir->ino->sb->labelLength) /* next entry is [label] */ /*{{{*/
++      if (dir->ino->sb->labelLength) /* next entry is [label] */
+       {
+         ent->ino=dir->ino->sb->maxdir+2;
+         ent->reclen=7;
+@@ -1165,34 +1703,39 @@
+         ++dir->pos;
+         return 1;
+       }
+-      /*}}}*/
++     
+     }
+     else if (dir->pos>=RESERVED_ENTRIES && dir->pos<dir->ino->sb->maxdir+RESERVED_ENTRIES)
+     {
+       int first=dir->pos-RESERVED_ENTRIES;
+ 
+-      if ((cur=dir->ino->sb->dir+(dir->pos-RESERVED_ENTRIES))->status>=0 && cur->status<=(dir->ino->sb->type==CPMFS_P2DOS ? 31 : 15))
++      if ((cur=dir->ino->sb->dir+(dir->pos-RESERVED_ENTRIES))->status >= 0 && cur->status<=(dir->ino->sb->type==CPMFS_P2DOS ? 31 : 15))
+       {
+-        /* determine first extent for the current file */ /*{{{*/
++        /* determine first extent for the current file */
+         for (i=0; i<dir->ino->sb->maxdir; ++i) if (i!=(dir->pos-RESERVED_ENTRIES))
+         {
+-          if (isMatching(cur->status,cur->name,cur->ext,dir->ino->sb->dir[i].status,dir->ino->sb->dir[i].name,dir->ino->sb->dir[i].ext) && EXTENT(cur->extnol,cur->extnoh)>EXTENT(dir->ino->sb->dir[i].extnol,dir->ino->sb->dir[i].extnoh)) first=i;
++          if (isMatching(cur->status,cur->name,cur->ext,dir->ino->sb->dir[i].status,dir->ino->sb->dir[i].name,dir->ino->sb->dir[i].ext) &&
++          EXTENT(cur->extnol,cur->extnoh)>EXTENT(dir->ino->sb->dir[i].extnol,dir->ino->sb->dir[i].extnoh))
++             first=i;
+         }
+-        /*}}}*/
++       
+         if (first==(dir->pos-RESERVED_ENTRIES))
+         {
+           ent->ino=dir->pos-RESERVED_INODES;
+-          /* convert file name to UNIX style */ /*{{{*/
++          /* convert file name to UNIX style */
+           buf[0]='0'+cur->status/10;
+           buf[1]='0'+cur->status%10;
+-          for (bufp=buf+2,i=0; i<8 && (cur->name[i]&0x7f)!=' '; ++i) *bufp++=tolower(cur->name[i]&0x7f);
++
++          for (bufp=buf+2,i=0; i<8 && (cur->name[i]&0x7f)!=' '; ++i)
++             *bufp++=tolower(cur->name[i]&0x7f);
++
+           for (hasext=0,i=0; i<3 && (cur->ext[i]&0x7f)!=' '; ++i)
+           {
+             if (!hasext) { *bufp++='.'; hasext=1; }
+             *bufp++=tolower(cur->ext[i]&0x7f);
+           }
+           *bufp='\0';
+-          /*}}}*/
++         
+           ent->reclen=strlen(buf);
+           strcpy(ent->name,buf);
+           ent->off=dir->pos;
+@@ -1205,8 +1748,10 @@
+     ++dir->pos;
+   }
+ }
+-/*}}}*/
+-/* cpmStat            -- stat                                    */ /*{{{*/
++
++/*============================================================================*/
++/* cpmStat            -- stat                                    */
++/*============================================================================*/
+ void cpmStat(const struct cpmInode *ino, struct cpmStat *buf)
+ {
+   buf->ino=ino->ino;
+@@ -1216,8 +1761,10 @@
+   buf->mtime=ino->mtime;
+   buf->ctime=ino->ctime;
+ }
+-/*}}}*/
+-/* cpmOpen            -- open                                    */ /*{{{*/
++
++/*============================================================================*/
++/* cpmOpen            -- open                                    */
++/*============================================================================*/
+ int cpmOpen(struct cpmInode *ino, struct cpmFile *file, mode_t mode)
+ {
+   if (S_ISREG(ino->mode))
+@@ -1238,8 +1785,10 @@
+     return -1;
+   }
+ }
+-/*}}}*/
+-/* cpmRead            -- read                                    */ /*{{{*/
++
++/*============================================================================*/
++/* cpmRead            -- read                                    */
++/*============================================================================*/
+ int cpmRead(struct cpmFile *file, char *buf, int count)
+ {
+   int findext=1,findblock=1,extent=-1,block=-1,extentno=-1,got=0,nextblockpos=-1,nextextpos=-1;
+@@ -1248,7 +1797,7 @@
+ 
+   extcap=(file->ino->sb->size<256 ? 16 : 8)*blocksize;
+   if (extcap>16384) extcap=16384*file->ino->sb->extents;
+-  if (file->ino->ino==file->ino->sb->maxdir+1) /* [passwd] */ /*{{{*/
++  if (file->ino->ino==file->ino->sb->maxdir+1) /* [passwd] */
+   {
+     if ((file->pos+count)>file->ino->size) count=file->ino->size-file->pos;
+     if (count) memcpy(buf,file->ino->sb->passwd+file->pos,count);
+@@ -1258,8 +1807,8 @@
+ #endif
+     return count;
+   }
+-  /*}}}*/
+-  else if (file->ino->ino==file->ino->sb->maxdir+2) /* [label] */ /*{{{*/
++ 
++  else if (file->ino->ino==file->ino->sb->maxdir+2) /* [label] */
+   {
+     if ((file->pos+count)>file->ino->size) count=file->ino->size-file->pos;
+     if (count) memcpy(buf,file->ino->sb->label+file->pos,count);
+@@ -1269,7 +1818,7 @@
+ #endif
+     return count;
+   }
+-  /*}}}*/
++ 
+   else while (count>0 && file->pos<file->ino->size)
+   {
+     char buffer[16384];
+@@ -1300,7 +1849,10 @@
+         {
+           start=(file->pos%blocksize)/file->ino->sb->secLength;
+           end=((file->pos%blocksize+count)>blocksize ? blocksize-1 : (file->pos%blocksize+count-1))/file->ino->sb->secLength;
++          /* uBee 2009/09/28 - added report_files=1/0 to switch on and off */
++          report_file_acc = report_sides; /* uBee 2009/09/28 */
+           readBlock(file->ino->sb,block,buffer,start,end);
++          report_file_acc = 0; /* uBee 2009/09/28 */
+         }
+       }
+       nextblockpos=(file->pos/blocksize)*blocksize+blocksize;
+@@ -1320,8 +1872,10 @@
+ #endif
+   return got;
+ }
+-/*}}}*/
+-/* cpmWrite           -- write                                   */ /*{{{*/
++
++/*============================================================================*/
++/* cpmWrite           -- write                                   */
++/*============================================================================*/
+ int cpmWrite(struct cpmFile *file, const char *buf, int count)
+ {
+   int findext=1,findblock=-1,extent=-1,extentno=-1,got=0,nextblockpos=-1,nextextpos=-1;
+@@ -1332,7 +1886,7 @@
+ 
+   while (count>0)
+   {
+-    if (findext) /*{{{*/
++    if (findext)
+     {
+       extentno=file->pos/16384;
+       extent=findFileExtent(file->ino->sb,file->ino->sb->dir[file->ino->ino].status,file->ino->sb->dir[file->ino->ino].name,file->ino->sb->dir[file->ino->ino].ext,0,extentno);
+@@ -1351,14 +1905,14 @@
+       findext=0;
+       findblock=1;
+     }
+-    /*}}}*/
+-    if (findblock) /*{{{*/
++   
++    if (findblock)
+     {
+       ptr=(file->pos%extcap)/blocksize;
+       if (file->ino->sb->size>=256) ptr*=2;
+       block=(unsigned char)file->ino->sb->dir[extent].pointers[ptr];
+       if (file->ino->sb->size>=256) block+=((unsigned char)file->ino->sb->dir[extent].pointers[ptr+1])<<8;
+-      if (block==0) /* allocate new block, set start/end to cover it */ /*{{{*/
++      if (block==0) /* allocate new block, set start/end to cover it */
+       {
+         if ((block=allocBlock(file->ino->sb))==-1) return (got==0 ? -1 : got);
+         file->ino->sb->dir[extent].pointers[ptr]=block&0xff;
+@@ -1367,22 +1921,23 @@
+         end=(blocksize-1)/file->ino->sb->secLength;
+         memset(buffer,0,blocksize);
+       }
+-      /*}}}*/
+-      else /* read existing block and set start/end to cover modified parts */ /*{{{*/
++     
++      else /* read existing block and set start/end to cover modified parts */
+       {
+         start=(file->pos%blocksize)/file->ino->sb->secLength;
+         end=((file->pos%blocksize+count)>blocksize ? blocksize-1 : (file->pos%blocksize+count-1))/file->ino->sb->secLength;
+         if (file->pos%file->ino->sb->secLength) readBlock(file->ino->sb,block,buffer,start,start);
+         if (end!=start && (file->pos+count-1)<blocksize) readBlock(file->ino->sb,block,buffer+end*file->ino->sb->secLength,end,end);
+       }
+-      /*}}}*/
++     
+       nextblockpos=(file->pos/blocksize)*blocksize+blocksize;
+       findblock=0;
+     }
+-    /*}}}*/
+-    /* fill block and write it */ /*{{{*/
++   
++    /* fill block and write it */
+     while (file->pos!=nextblockpos && count)
+     {
++      file->ino->sb->dirtyDirectory=1; /* uBee (MH 2.13) 2010/04/03 */
+       buffer[file->pos%blocksize]=*buf++;
+       ++file->pos;
+       if (file->ino->size<file->pos) file->ino->size=file->pos;
+@@ -1411,22 +1966,30 @@
+     file->ino->sb->dir[extent].blkcnt=((file->pos-1)%16384)/128+1;
+     file->ino->sb->dir[extent].lrc=file->pos%128;
+     updateTimeStamps(file->ino,extent);
+-    /*}}}*/
++   
+     if (file->pos==nextextpos) findext=1;
+     else if (file->pos==nextblockpos) findblock=1;
+   }
++  /* uBee (MH 2.13) 2010/04/03
+   writePhysDirectory(file->ino->sb);
++  */  
+   return got;
+ }
+-/*}}}*/
+-/* cpmClose           -- close                                   */ /*{{{*/
++
++/*============================================================================*/
++/* cpmClose           -- close                                   */
++/*============================================================================*/
+ int cpmClose(struct cpmFile *file)
+ {
++  /* uBee (MH 2.13) 2010/04/03
+   if (file->mode&O_WRONLY) return (writePhysDirectory(file->ino->sb));
++  */
+   return 0;
+ }
+-/*}}}*/
+-/* cpmCreat           -- creat                                   */ /*{{{*/
++
++/*============================================================================*/
++/* cpmCreat           -- creat                                   */
++/*============================================================================*/
+ int cpmCreat(struct cpmInode *dir, const char *fname, struct cpmInode *ino, mode_t mode)
+ {
+   int user;
+@@ -1448,6 +2011,7 @@
+   drive=dir->sb;
+   if ((extent=findFreeExtent(dir->sb))==-1) return -1;
+   ent=dir->sb->dir+extent;
++  drive->dirtyDirectory=1; /* uBee (MH 2.13) 2010/04/03 */
+   memset(ent,0,32);
+   ent->status=user;
+   memcpy(ent->name,name,8);
+@@ -1460,18 +2024,24 @@
+   time(&ino->ctime);
+   ino->sb=dir->sb;
+   updateTimeStamps(ino,extent);
++  /* uBee (MH 2.13) 2010/04/03
+   writePhysDirectory(dir->sb);
++  */
+   return 0;
+ }
+-/*}}}*/
+-/* cpmAttrGet         -- get CP/M attributes                     */ /*{{{*/
++
++/*============================================================================*/
++/* cpmAttrGet         -- get CP/M attributes                     */
++/*============================================================================*/
+ int cpmAttrGet(struct cpmInode *ino, cpm_attr_t *attrib)
+ {
+ 	*attrib = ino->attr;
+ 	return 0;
+ }
+-/*}}}*/
+-/* cpmAttrSet         -- set CP/M attributes                     */ /*{{{*/
++
++/*============================================================================*/
++/* cpmAttrSet         -- set CP/M attributes                     */
++/*============================================================================*/
+ int cpmAttrSet(struct cpmInode *ino, cpm_attr_t attrib)
+ {
+   struct cpmSuperBlock *drive;
+@@ -1483,6 +2053,7 @@
+   memset(extension, 0, sizeof(extension));
+   drive  = ino->sb;
+   extent = ino->ino;
++  drive->dirtyDirectory=1; /* uBee (MH 2.13) 2010/04/03 */
+   
+   /* Strip off existing attribute bits */
+   memcpy7(name,      drive->dir[extent].name, 8);
+@@ -1503,8 +2074,9 @@
+     memcpy(drive->dir[extent].name, name, 8);
+     memcpy(drive->dir[extent].ext, extension, 3);
+   } while ((extent=findFileExtent(drive, user,name,extension,extent+1,-1))!=-1);
++  /* uBee (MH 2.13) 2010/04/03
+   if (writePhysDirectory(drive)==-1) return -1;
+-
++  */
+   /* Update the stored (inode) copies of the file attributes and mode */
+   ino->attr=attrib;
+   if (attrib&CPM_ATTR_RO) ino->mode&=~(S_IWUSR|S_IWGRP|S_IWOTH);
+@@ -1512,8 +2084,10 @@
+   
+   return 0;
+ }
+-/*}}}*/
+-/* cpmChmod           -- set CP/M r/o & sys                      */ /*{{{*/
++
++/*============================================================================*/
++/* cpmChmod           -- set CP/M r/o & sys                      */
++/*============================================================================*/
+ int cpmChmod(struct cpmInode *ino, mode_t mode)
+ {
+ 	/* Convert the chmod() into a chattr() call that affects RO */
+@@ -1522,19 +2096,184 @@
+ 	if (!(mode & (S_IWUSR|S_IWGRP|S_IWOTH))) newatt |= CPM_ATTR_RO;
+ 	return cpmAttrSet(ino, newatt);
+ }
+-/*}}}*/
+-/* cpmSync            -- write directory back                    */ /*{{{*/
++
++/* cpmSync            -- write directory back                    */
++/* uBee (MH 2.13) 2010/04/03
+ int cpmSync(struct cpmSuperBlock *sb)
+ {
+   return (writePhysDirectory(sb));
+ }
+-/*}}}*/
+-/* cpmUmount          -- free super block                        */ /*{{{*/
++*/
++/*============================================================================*/
++/* cpmSync            -- write directory back                    */
++/*============================================================================*/
++int cpmSync(struct cpmSuperBlock *sb)
++{
++  if (sb->dirtyDirectory)
++  {
++    int i,blocks,entry;
++
++    blocks=(sb->maxdir*32+sb->blksiz-1)/sb->blksiz;
++    entry=0;
++    for (i=0; i<blocks; ++i) 
++    {
++      if (writeBlock(sb,i,(char*)(sb->dir+entry),0,-1)==-1) return -1;
++      entry+=(sb->blksiz/32);
++    }
++    sb->dirtyDirectory=0;
++  }
++  return 0;
++}
++/* uBee (MH 2.13) 2010/04/03 */
++
++/*============================================================================*/
++/* cpmUmount          -- free super block                        */
++/*============================================================================*/
+ void cpmUmount(struct cpmSuperBlock *sb)
+ {
++  cpmSync(sb); /* uBee (MH 2.13) 2010/04/03 */
+   free(sb->alv);
+   free(sb->skewtab);
+   free(sb->dir);
+   if (sb->passwdLength) free(sb->passwd);
+ }
+-/*}}}*/
++
++/*============================================================================*/
++/* uBee 2009/09/28 - added function for CP/M file physical location reports */
++/*============================================================================*/
++void cpm_set_report (int report, const char *s)
++{
++ report_sides = report;
++
++ strncpy(report_file_user, s, 2); /* copy the user number */
++ report_file_user[2] = 0;
++
++ strcpy(report_file_name, s+2); /* skip the user number */
++}
++
++/*============================================================================*/
++/*
++ uBee 2010/03/29
++ Search an array of strings for the first occurence of the passed search
++ string.  The string array must be be terminated by an empty string. 
++
++   pass: char *strg_array	pointer to a string array to be checked
++         char *strg_find	pointer to a string to search for
++ return: int			index if found, else -1 */
++/*============================================================================*/
++int string_search (char *strg_array[], char *strg_find)
++{
++ int i;
++
++ for (i=0; strg_array[i][0] != 0; i++)
++    {
++     if (strcmp(strg_find, strg_array[i]) == 0)
++        return i;
++    }
++ return -1;
++}
++
++/*============================================================================*/
++/*
++ uBee 2015/01/07
++ Return physical Cylinder and Head values based on sidedness setting.
++ Code is based on LibDsk-1.3.5 dsklphys.c dg_lt2pt()
++
++ sidedness = 0
++ logical cyl  head
++    0     0   0
++    1     0   1
++    2     1   0
++    3     1   1
++
++ sidedness = 1 (example is for 40 cylinder disk)
++ logical cyl  head
++    0     0   0  Out
++   39    39   0
++   40    39   1  Back
++   79     0   1
++
++ sidedness = 2 (example is for 40 cylinder disk)
++ logical cyl  head
++    0      0   0  Out 
++   39     39   0
++   40      0   1  Out
++   79     39   1
++
++ sidedness = 3 (example is for nanowasp disk format by emulator author)
++
++ Microbee Nanowasp (DS DD 40T 10x512 s/t)
++ This is a strange format which appears to use an interleaved format and
++ does not appear to be the same format as LibDsk's Nanowasp layout which
++ uses sidedness=2 (out-out).
++ To read this disk image (thought to be created by NW's emulator author) a
++ workaround using cylinders=80, heads=1 and sidedness=3 is required.
++ It probably can't be used to read/write files on a floppy disk.
++
++  logical cyl  head
++     0      0   0
++     1     40   0
++     2      1   0
++     3     41   0
++    39     59   0
++    
++    40     20   0
++    78     39   0
++    79     79   0
++     
++    39     39   0
++    40      0   1  Out
++    79     39   1
++  
++   pass: const struct Device *this
++         int cylinders          number of cylinders on disk
++         int heads              number of disk heads
++         int sidedness          sidedness
++         int logical            logical track number (i.e. 0..79, 0..159)
++         int *cyl               return of physical cylinder number
++         int *head              return of physical head number
++ return: void */
++/*============================================================================*/
++void get_physical_values (int cylinders, int heads, int sidedness,
++                          int logical, int *cyl, int *head)
++{
++ int c = 0;
++ int h = 0;
++
++ /* convert to physical values */  
++ switch (sidedness)
++    {
++     case 0 : /* apply the sidedness if Alternate (0) */
++        c = logical / heads;
++        h = logical % heads;
++        break;
++     case 1 : /* apply the sidedness if out-back (1) */
++        if (logical < cylinders)
++           {
++            c = logical;
++            h = 0;
++           }
++        else
++           {
++            c = (2 * cylinders) - (1 + logical);
++            h = 1;
++           }
++        break;
++     case 2 : /* apply the sidedness if out-out (2) */
++        c = (logical % cylinders);
++        h = (logical / cylinders);
++        break;
++     case 3 : /* apply the sidedness if special nanowasp (3) */
++        h = 0;
++        c = (logical & 1) * 40 + (logical / 2);
++        break;
++    }
++ 
++ *cyl  = c;
++ *head = h;
++
++#ifdef TEST_SIDEDNESS
++ printf("cylinders=%02d heads=%d sidedness=%d logical=%3d cyl=%3d head=%d\n",
++ cylinders, heads, sidedness, logical, *cyl, *head);
++#endif 
++}
+diff -u cpmtools-2.10/cpmfs.h cpmtools-2.10-diff/cpmfs.h
+--- cpmtools-2.10/cpmfs.h	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/cpmfs.h	2016-11-16 10:53:54.602843247 +1030
+@@ -4,6 +4,8 @@
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ 
++#include "build.h"  /* 2010/03/31 uBee */
++
+ #ifdef _WIN32
+     #include <windows.h>
+     #include <winioctl.h>
+@@ -113,6 +115,15 @@
+   int blksiz;
+   int maxdir;
+   int skew;
++  int skewstart;    /* uBee 2009/09/28 */
++  int datasect;     /* uBee 2009/09/28 */
++  int heads;        /* uBee 2009/09/28 */
++  int sidedness;    /* uBee 2014/02/03 */
++  int sideoffs;     /* uBee 2015/01/13 */  
++  int cylinders;    /* uBee 2009/09/28 */
++  int fm;           /* uBee 2010/03/17 */
++  int datarate;     /* uBee 2016/07/11 */
++  int testside;     /* uBee 2009/09/28 */
+   int boottrk;
+   int type;
+   int size;
+@@ -127,6 +138,7 @@
+   char *passwd;
+   size_t passwdLength;
+   struct cpmInode *root;
++  int dirtyDirectory; /* uBee (MH 2.13) 2010/04/03 */
+ };
+ 
+ struct cpmStatFS
+@@ -165,6 +177,8 @@
+ int cpmCreat(struct cpmInode *dir, const char *fname, struct cpmInode *ino, mode_t mode);
+ int cpmSync(struct cpmSuperBlock *sb);
+ void cpmUmount(struct cpmSuperBlock *sb);
++int string_search (char *strg_array[], char *strg_find);
++void get_physical_values (int tracks, int heads, int sidedness, int track, int *cylinder, int *head);
+ 
+ #ifdef __cplusplus
+ 	}
+diff -u cpmtools-2.10/cpmls.c cpmtools-2.10-diff/cpmls.c
+--- cpmtools-2.10/cpmls.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/cpmls.c	2016-11-16 10:53:54.602843247 +1030
+@@ -1,4 +1,3 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <ctype.h>
+@@ -13,20 +12,25 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+ 
+-/* variables */ /*{{{*/
++/* 2016/11/01 uBee - for -e option */
++extern int erased_files;
++
+ static const char * const month[12]={"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec" };
+-/*}}}*/
+ 
+-/* namecmp -- compare two entries */ /*{{{*/
++/* namecmp -- compare two entries */
+ static int namecmp(const void *a, const void *b)
+ {
+   if (**((const char * const *)a)=='[') return -1;
+   return strcmp(*((const char * const *)a),*((const char * const *)b));
+ }
+-/*}}}*/
+-/* olddir  -- old style output */ /*{{{*/
++
++/* olddir  -- old style output */
++/* 2016/11/01 uBee - **dirent are the command line parameters (gargv) and entries is gargc
++   after cpmglob() has been run on argv and argc.  This also applies to functions oldddir(),
++   old3dir(), lsattr() and ls() further below. (this just a comment, no code changes)
++*/
++
+ static void olddir(char **dirent, int entries)
+ {
+   int i,j,k,l,user,announce;
+@@ -36,36 +40,50 @@
+   {
+     for (i=l=0; i<entries; ++i)
+     {
+-      if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%10)
++      if (dirent[i][0]=='0' + user/10 && dirent[i][1]=='0' + user%10)
+       {
+         if (announce==1)
+         {
+           printf("User %d\n",user);
+         }
++       
+         announce=2;
+         if (l%4) printf(" : ");
+-        for (j=2; dirent[i][j] && dirent[i][j]!='.'; ++j) putchar(toupper(dirent[i][j]));
+-        k=j; while (k<11) { putchar(' '); ++k; }
+-        if (dirent[i][j]=='.') ++j;
+-        for (k=0; dirent[i][j]; ++j,++k) putchar(toupper(dirent[i][j]));
+-        for (; k<3; ++k) putchar(' ');
++        for (j=2; dirent[i][j] && dirent[i][j] != '.'; ++j)
++           putchar(toupper(dirent[i][j]));
++      
++        k=j;
++        while (k<11)
++           {
++            putchar(' ');
++            ++k;
++           }
++      
++        if (dirent[i][j]=='.')
++           ++j;
++        for (k=0; dirent[i][j]; ++j,++k)
++           putchar(toupper(dirent[i][j]));
++        for (; k<3; ++k)
++           putchar(' ');
+         ++l;
+       }
+-      if (l && (l%4)==0) {
++      
++      if (l && (l%4) == 0)
++       {
+ 	l = 0;
+ 	putchar('\n');
+-      }	
++       }	
+     }
+     if (l%4) {
+-	putchar('\n');
++       putchar('\n');
+     }
+ 
+     if (announce==2) announce=1;
+   }
+   if (entries==0) printf("No files\n");
+ }
+-/*}}}*/
+-/* oldddir -- old style long output */ /*{{{*/
++
++/* oldddir -- old style long output */
+ static void oldddir(char **dirent, int entries, struct cpmInode *ino)
+ {
+   struct cpmStatFS buf;
+@@ -130,8 +148,8 @@
+   }
+   else printf("No files found\n");
+ }
+-/*}}}*/
+-/* old3dir -- old CP/M Plus style long output */ /*{{{*/
++
++/* old3dir -- old CP/M Plus style long output */
+ static void old3dir(char **dirent, int entries, struct cpmInode *ino)
+ {
+   struct cpmStatFS buf;
+@@ -207,8 +225,8 @@
+   }
+   else printf("No files found\n");
+ }
+-/*}}}*/
+-/* ls      -- UNIX style output */ /*{{{*/
++
++/* ls      -- UNIX style output */
+ static void ls(char **dirent, int entries, struct cpmInode *ino, int l, int c, int iflag)
+ {
+   int i,user,announce,any;
+@@ -220,58 +238,69 @@
+   qsort(dirent,entries,sizeof(char*),namecmp);
+   announce=0;
+   any=0;
++
+   for (user=0; user<32; ++user)
+   {
+     announce=0;
+-    for (i=0; i<entries; ++i) if (dirent[i][0]!='.')
+-    {
+-      if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%10)
+-      {
+-        if (announce==0)
+-        {
+-          if (any) putchar('\n');
+-          printf("%d:\n",user);
+-          announce=1;
+-        }
+-        any=1;
+-        if (iflag || l)
+-        {
+-          cpmNamei(ino,dirent[i],&file);
+-          cpmStat(&file,&statbuf);
+-        }
+-        if (iflag) printf("%4ld ",(long) statbuf.ino);
+-        if (l)
+-        {
+-          struct tm *tmp;
+-
+-          putchar(S_ISDIR(statbuf.mode) ? 'd' : '-');
+-          putchar(statbuf.mode&0400 ? 'r' : '-');
+-          putchar(statbuf.mode&0200 ? 'w' : '-');
+-          putchar(statbuf.mode&0100 ? 'x' : '-');
+-          putchar(statbuf.mode&0040 ? 'r' : '-');
+-          putchar(statbuf.mode&0020 ? 'w' : '-');
+-          putchar(statbuf.mode&0010 ? 'x' : '-');
+-          putchar(statbuf.mode&0004 ? 'r' : '-');
+-          putchar(statbuf.mode&0002 ? 'w' : '-');
+-          putchar(statbuf.mode&0001 ? 'x' : '-');
++    for (i=0; i<entries; ++i)
++       if (dirent[i][0] != '.')
++       {
++         if (dirent[i][0]=='0'+user/10 && dirent[i][1]=='0'+user%10)
++         {
++           if (announce==0)
++           {
++             if (any)
++                putchar('\n');
++
++             printf("%d:\n",user);
++             announce=1;
++           }
++
++           any=1;
++           if (iflag || l)
++           {
++             cpmNamei(ino,dirent[i],&file);
++             cpmStat(&file,&statbuf);
++           }
++
++           if (iflag)
++              printf("%4ld ",(long) statbuf.ino);
++
++           if (l)
++           {
++             struct tm *tmp;
++
++             putchar(S_ISDIR(statbuf.mode) ? 'd' : '-');
++             putchar(statbuf.mode&0400 ? 'r' : '-');
++             putchar(statbuf.mode&0200 ? 'w' : '-');
++             putchar(statbuf.mode&0100 ? 'x' : '-');
++             putchar(statbuf.mode&0040 ? 'r' : '-');
++             putchar(statbuf.mode&0020 ? 'w' : '-');
++             putchar(statbuf.mode&0010 ? 'x' : '-');
++             putchar(statbuf.mode&0004 ? 'r' : '-');
++             putchar(statbuf.mode&0002 ? 'w' : '-');
++             putchar(statbuf.mode&0001 ? 'x' : '-');
+ #if 0
+-          putchar(statbuf.flags&FLAG_PUBLIC ? 'p' : '-');
+-          putchar(dir[i].flags&FLAG_SYSTEM ? 's' : '-');
+-          printf(" %-2d ",dir[i].user);
++             putchar(statbuf.flags&FLAG_PUBLIC ? 'p' : '-');
++             putchar(dir[i].flags&FLAG_SYSTEM ? 's' : '-');
++             printf(" %-2d ",dir[i].user);
+ #endif
+-          printf("%8.1ld ",(long)statbuf.size);
+-          tmp=localtime(c ? &statbuf.ctime : &statbuf.mtime);
+-          printf("%s %02d ",month[tmp->tm_mon],tmp->tm_mday);
+-          if ((c ? statbuf.ctime : statbuf.mtime)<(now-182*24*3600)) printf("%04d  ",tmp->tm_year+1900);
+-          else printf("%02d:%02d ",tmp->tm_hour,tmp->tm_min);
+-        }
+-        printf("%s\n",dirent[i]+2);
+-      }
+-    }
++             printf("%8.1ld ",(long)statbuf.size);
++             tmp=localtime(c ? &statbuf.ctime : &statbuf.mtime);
++             printf("%s %02d ",month[tmp->tm_mon],tmp->tm_mday);
++             if ((c ? statbuf.ctime : statbuf.mtime)<(now-182*24*3600))
++                printf("%04d  ",tmp->tm_year+1900);
++             else
++                printf("%02d:%02d ",tmp->tm_hour,tmp->tm_min);
++           }
++
++           printf("%s\n",dirent[i]+2);
++         }
++       }
+   }
+ }
+-/*}}}*/
+-/* lsattr  -- output something like e2fs lsattr */ /*{{{*/
++
++/* lsattr  -- output something like e2fs lsattr */
+ static void lsattr(char **dirent, int entries, struct cpmInode *ino)
+ {
+   int i,user,announce,any;
+@@ -316,13 +345,12 @@
+     }
+   }
+ }
+-/*}}}*/
+ 
+ const char cmd[]="cpmls";
+ 
+ int main(int argc, char *argv[])
+ {
+-  /* variables */ /*{{{*/
++  /* variables */
+   const char *err;
+   const char *image;
+   const char *format=FORMAT;
+@@ -337,10 +365,15 @@
+   int gargc;
+   static char starlit[2]="*";
+   static char * const star[]={starlit};
+-  /*}}}*/
+ 
+-  /* parse options */ /*{{{*/
+-  while ((c=getopt(argc,argv,"cT:f:ih?dDFlA"))!=EOF) switch(c)
++  /* parse options */
++#if HAVE_LIBDSK_H
++  /* LibDsk option addition - uBee 2009/09/28 */
++  /* New -e option to only work on erased_files - uBee 2016/11/01 */
++  while ((c=getopt(argc,argv,"cT:L:f:ih?dDeFlAv"))!=EOF) switch(c)
++#else  
++  while ((c=getopt(argc,argv,"cT:f:ih?dDeFlAv"))!=EOF) switch(c)
++#endif  
+   {
+     case 'f': format=optarg; break;
+     case 'T': devopts=optarg; break;
+@@ -348,36 +381,82 @@
+     case '?': usage=1; break;
+     case 'd': style=1; break;
+     case 'D': style=2; break;
++    case 'e': erased_files = 1; break; /* uBee 2016/11/01 */
+     case 'F': style=3; break;
+     case 'l': style=4; break;
+     case 'A': style=5; break;
+     case 'c': changetime=1; break;
+     case 'i': inode=1; break;
++    case 'v': fprintf(stderr, APPVER"\n");    /* uBee 2010/03/31 */
++              exit(1);
++#if HAVE_LIBDSK_H
++    case 'L': Device_libdsk_options(optarg);  /* uBee 2009/09/28 */
++#endif    
+   }
+ 
+-  if (optind==argc) usage=1;
+-  else image=argv[optind++];
++  if (optind == argc)
++     usage = 1;
++  else
++     image = argv[optind++];
++     
++  /* 2016/11/01 uBee - at this point argv points to beginning of file parameters, i.e: 0:*.* 0:myfile.ext */
+ 
+   if (usage)
+   {
+-    fprintf(stderr,"Usage: %s [-f format] [-T libdsk-type] [-d|-D|-F|-A|[-l][-c][-i]] image [file ...]\n",cmd);
++    fprintf(stderr,"Usage: %s [-ev] [-f format] [-T libdsk-type] [-d|-D|-F|-A|[-l][-c][-i]] image [file ...]\n",cmd);
++    /* Add some more information about existing and new options - uBee 2009/09/28 */
++    fprintf(stderr,"\nOther options:\n");
++    fprintf(stderr," -c    Change times.\n");        /* 2016/11/02 uBee */
++    fprintf(stderr," -d    Directory style 1.\n");   /* 2016/11/02 uBee */
++    fprintf(stderr," -D    Directory style 2.\n");   /* 2016/11/02 uBee */
++    fprintf(stderr," -F    Directory style 3.\n");   /* 2016/11/02 uBee */
++    fprintf(stderr," -l    Directory style 4.\n");   /* 2016/11/02 uBee */    
++    fprintf(stderr," -A    Directory style 5.\n");   /* 2016/11/02 uBee */
++    fprintf(stderr," -i    Inode.\n");               /* 2016/11/02 uBee */
++    fprintf(stderr," -e    Work on Erased files only (as user 0).\n");  /* 2016/11/01 uBee */
++    fprintf(stderr," -v    Report build version.\n");  /* 2010/03/31 uBee */
++#if HAVE_LIBDSK_H
++    fprintf(stderr," -T    libdsk type.\n");
++    fprintf(stderr," -L x  LibDsk options (x) separated by spaces in double quotes\n");
++    fprintf(stderr,"             hd : data rate for 1.4Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             dd : data rate for 360k 5.25\" in 1.2Mb drive.\n");
++    fprintf(stderr,"             sd : data rate for 720k 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             ed : data rate for 2.8Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"          dstep : double step (40T disk in 80T drive)\n");
++#endif
+     exit(1);
+   }
+-  /*}}}*/
+-  /* open image */ /*{{{*/
++
++  /* open image */
+   if ((err=Device_open(&drive.dev,image,O_RDONLY,devopts))) 
+   {
+     fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
+     exit(1);
+   }
+   cpmReadSuper(&drive,&root,format);
+-  /*}}}*/
+-  if (optind<argc) cpmglob(optind,argc,argv,&root,&gargc,&gargv);
+-  else cpmglob(0,1,star,&root,&gargc,&gargv);
+-  if (style==1) olddir(gargv,gargc);
+-  else if (style==2) oldddir(gargv,gargc,&root);
+-  else if (style==3) old3dir(gargv,gargc,&root);
+-  else if (style==5) lsattr(gargv, gargc, &root); 
+-  else ls(gargv,gargc,&root,style==4,changetime,inode);
++
++  /* 2016/11/01 uBee - The CP/M file name entries are extract in 'cpmglob'
++  to a higher level format */
++  if (optind < argc)
++     cpmglob(optind, argc, argv, &root, &gargc, &gargv);
++  else
++     cpmglob(0, 1, star, &root, &gargc, &gargv);
++
++#if 0
++ /* 2015/01/10, 2016/11/01 uBee */
++ printf("cpmls: optind=%d argc=%d star=|%s| gargc=%d gargv=%s\n", optind, argc, star[0], gargc, gargv[0]);
++#endif 
++
++  if (style == 1)
++     olddir(gargv, gargc);
++  else if (style == 2)
++     oldddir(gargv, gargc, &root);
++  else if (style == 3)
++     old3dir(gargv, gargc, &root);
++  else if (style == 5)
++     lsattr(gargv, gargc, &root); 
++  else
++     ls(gargv,gargc,&root,style==4,changetime,inode);
++     
+   exit(0);
+ }
+diff -u cpmtools-2.10/cpmrm.c cpmtools-2.10-diff/cpmrm.c
+--- cpmtools-2.10/cpmrm.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/cpmrm.c	2016-11-16 10:53:54.612843181 +1030
+@@ -1,4 +1,3 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <ctype.h>
+@@ -13,13 +12,11 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+ 
+ const char cmd[]="cpmrm";
+ 
+-int main(int argc, char *argv[]) /*{{{*/
++int main(int argc, char *argv[])
+ {
+-  /* variables */ /*{{{*/
+   const char *err;
+   const char *image;
+   const char *format=FORMAT;
+@@ -29,15 +26,24 @@
+   struct cpmInode root;
+   int gargc;
+   char **gargv;
+-  /*}}}*/
+ 
+-  /* parse options */ /*{{{*/
+-  while ((c=getopt(argc,argv,"T:f:h?"))!=EOF) switch(c)
++  /* parse options */
++#if HAVE_LIBDSK_H
++  /* LibDsk option addition - uBee 2009/09/28 */
++  while ((c=getopt(argc,argv,"T:L:f:h?v"))!=EOF) switch(c)
++#else  
++  while ((c=getopt(argc,argv,"T:f:h?v"))!=EOF) switch(c)
++#endif  
+   {
+     case 'T': devopts=optarg; break;
+     case 'f': format=optarg; break;
+     case 'h':
+     case '?': usage=1; break;
++    case 'v': fprintf(stderr, APPVER"\n");    /* uBee 2010/03/31 */
++              exit(1);
++#if HAVE_LIBDSK_H
++    case 'L': Device_libdsk_options(optarg);  /* uBee 2009/09/28 */
++#endif    
+   }
+ 
+   if (optind>=(argc-1)) usage=1;
+@@ -46,17 +52,29 @@
+   if (usage)
+   {
+     fprintf(stderr,"Usage: %s [-f format] [-T dsktype] image pattern ...\n",cmd);
++    /* Add some more information about existing and new options - uBee 2009/09/28 */
++    fprintf(stderr,"\nOther options:\n");
++    fprintf(stderr," -v    Report build version.\n");  /* 2010/03/31 uBee */
++#if HAVE_LIBDSK_H
++    fprintf(stderr," -T    libdsk type.\n");
++    fprintf(stderr," -L x  LibDsk options (x) separated by spaces in double quotes\n");
++    fprintf(stderr,"             hd : data rate for 1.4Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             dd : data rate for 360k 5.25\" in 1.2Mb drive.\n");
++    fprintf(stderr,"             sd : data rate for 720k 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             ed : data rate for 2.8Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"          dstep : double step (40T disk in 80T drive)\n");
++#endif
+     exit(1);
+   }
+-  /*}}}*/
+-  /* open image */ /*{{{*/
++
++  /* open image */
+   if ((err=Device_open(&drive.dev, image, O_RDWR, devopts)))
+   {
+     fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
+     exit(1);
+   }
+   cpmReadSuper(&drive,&root,format);
+-  /*}}}*/
++
+   cpmglob(optind,argc,argv,&root,&gargc,&gargv);
+   for (i=0; i<gargc; ++i)
+   {
+@@ -66,6 +84,6 @@
+       exitcode=1;
+     }
+   }
++  cpmUmount(&drive); /* uBee (MH 2.13) 2010/04/03 */
+   exit(exitcode);
+ }
+-/*}}}*/
+diff -u cpmtools-2.10/device.h cpmtools-2.10-diff/device.h
+--- cpmtools-2.10/device.h	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/device.h	2016-11-16 10:53:54.602843247 +1030
+@@ -24,12 +24,39 @@
+   HANDLE hdisk;
+ #endif
+   int fd;
++  int datasect;  /* uBee 2009/09/28 */
++  int cylinders; /* uBee 2015/01/08 */
++  int heads;     /* uBee 2009/09/28 */
++  int sidedness; /* uBee 2014/02/04 */
++  int sideoffs;  /* uBee 2015/01/13 */
++  int testside;  /* uBee 2009/09/28 */
++  int addoffs;   /* uBee 2009/09/28 */
+ };
+ 
+ const char *Device_open(struct Device *self, const char *filename, int mode, const char *deviceOpts);
+-void Device_setGeometry(struct Device *self, int secLength, int sectrk, int tracks);
++
++struct cpmSuperBlock; /* uBee 2016/07/12 */
++void Device_setGeometry(struct Device *this, struct cpmSuperBlock *d);
++
+ const char *Device_close(struct Device *self);
++/* uBee 2016/07/18 rev i
++   Added a 'flags' parameter to Device_readSector() and Device_writeSector()
++
++   uBee 2010/10/17 rev d
++   Added logical sector (lsector) for drivers that need a logical sector
++   number and handle's it's own skew translation i.e the 'remote' driver on
++   CP/M 3, CP/M 2. */
++
++/*
+ const char *Device_readSector(const struct Device *self, int track, int sector, char *buf);
+ const char *Device_writeSector(const struct Device *self, int track, int sector, const char *buf);
++*/
++
++const char *Device_readSector(const struct Device *self, int track, int sector, int lsector, int flags, char *buf);
++const char *Device_writeSector(const struct Device *self, int track, int sector, int lsector, int flags, const char *buf);
++
++#if HAVE_LIBDSK_H
++void Device_libdsk_options (char *libdsk_opts);
++#endif
+ 
+ #endif
+diff -u cpmtools-2.10/device_libdsk.c cpmtools-2.10-diff/device_libdsk.c
+--- cpmtools-2.10/device_libdsk.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/device_libdsk.c	2016-11-16 10:53:54.602843247 +1030
+@@ -1,76 +1,575 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <assert.h>
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <stdio.h>      /* for printf debugging - uBee 2009/09/28 */
++#include <ctype.h>      /* for toupper() - uBee 2009/09/28 */
++#ifdef _WIN32  /* uBee 2016/07/18 */
++#include <ncurses/curses.h>
++#else
++#include <curses.h>
++#endif
++#ifdef __linux__
++#include <sys/ioctl.h>  /* for ioctl - uBee 2009/09/28 */
++#include <linux/fd.h>   /* for ioctl constants - uBee 2009/09/28 */
++#endif
+ 
++#include "cpmfs.h"      /* uBee 2014/02/03 */
+ #include "device.h"
+ 
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+ 
+-/* Device_open           -- Open an image file                      */ /*{{{*/
++static int datarate = -1;    /* uBee 2009/09/28 */
++static int doublestep = -1;  /* uBee 2009/09/28 */
++static char device_type[32]; /* uBee 2010/03/11 */
++
++int rcpmfs;                  /* uBee 2016/11/11 */
++
++/*
++================================================================================
++ Disk read ID field function - added by uBee 2009/09/28.
++
++ This is used to get the sector value from the ID field of the first sector
++ read from the requested track/head.  The value is needed by some formats
++ that don't use the correct side value in the sector IDs.
++
++ uBee 2015/01/13
++ Added new this->sideoffs value to the head_result
++
++ uBee 2014/02/16
++ Added cyl_result return value.
++
++ uBee 2010/03/11
++ The dsk_psecid() may not be supported by the LibDsk driver.  In these cases this
++ function returns *head_result equal to the side parameter. The function now always 
++ returns DSK_ERR_OK.
++
++   pass: struct Device *this
++         int side
++         int track
++         int *head_result               result of read for the head ID
++         int *cyl_result                result of read for the cylinder ID
++ return: int				0 if no errors, else error number
++================================================================================
++*/
++static int disk_read_idfield (const struct Device *this, int side, int track, int *head_result, int *cyl_result)
++{
++ int res = 0; 
++
++ dsk_err_t dsk_err;
++ DSK_FORMAT result;
++
++#if 0
++ printf("disk_read_idfield() track=%d, side=%d\n", track, side);
++#endif
++
++ /* get the side information from first available sector header ID */
++ dsk_err = dsk_psecid(this->dev, &this->geom, track, side, &result);
++  
++ if (dsk_err == DSK_ERR_OK)
++    {
++     *head_result = result.fmt_head;
++     *cyl_result = result.fmt_cylinder;
++    }
++ else                             /* else if DSK_ERR_NOTIMPL or read error */
++    {
++     *head_result = side + this->sideoffs;
++     *cyl_result = track;
++    }
++
++#if 0
++ printf("disk_read_idfield() *head_result=%d, *cyl_result=%d\n",
++ *head_result, *cyl_result);
++#endif
++
++ return DSK_ERR_OK;
++}
++
++/*
++================================================================================
++ Device_open           -- Open an image file
++
++ uBee 2010/03/11
++
++ The code added 2009/12/11 and edited in patch 'c' has now been simplified
++ as the original reason for having it is now being done using a better
++ method. The code is now used to convert the type to lower case so that type
++ testing can be made in other places.
++ 
++ The driver_type variable has now been removed.
++================================================================================
++*/
+ const char *Device_open(struct Device *this, const char *filename, int mode, const char *deviceOpts)
+ {
+-  dsk_err_t e = dsk_open(&this->dev, filename, deviceOpts, NULL);
++ int i;
++ dsk_err_t dsk_err;
++ int fd;
++
++ if (deviceOpts != NULL)
++    {
++     strncpy(device_type, deviceOpts, sizeof(device_type)-1);
++     device_type[sizeof(device_type)-1] = 0;
++     i = 0;
++     /* This may be used to test for certain device types and assign driver_type accordingly. */
++     while (device_type[i])
++        {
++         device_type[i] = tolower(device_type[i]);
++         i++;
++        }
++     /* uBee 20161/11/11 - test if it's the 'rcpmfs' type and flag it */
++     rcpmfs = (strcmp(device_type, "rcpmfs") == 0);
++    }
++ else
++    strcpy(device_type, "raw");
++ /* end added code - uBee 2009/12/11, 2010/02/21, 2010/03/11 */
++    
++ /* uBee 2009/09/28  dsk_err_t e = dsk_open(&this->dev, filename, deviceOpts, NULL); */
++  dsk_err = dsk_open(&this->dev, filename, device_type, NULL); /* uBee 2009/09/28 */
+   this->opened = 0;
+-  if (e) return dsk_strerror(e);
++  if (dsk_err)
++     return dsk_strerror(dsk_err);
+   this->opened = 1;
+-  dsk_getgeom(this->dev, &this->geom); 
++  dsk_getgeom(this->dev, &this->geom);
++
++ /* uBee 2009/09/28
++   number of retries, and double stepping
++ */   
++  
++ dsk_set_retry(this->dev, 100);   /* set retry count high */
++
++ /* set double stepping if double stepping parameter used */
++ if (doublestep != -1 && this->dev)
++    dsk_err = dsk_set_option(this->dev, "DOUBLESTEP", 1);
++ /* end added code - uBee 2009/09/28 */
++
+   return NULL;
+ }
+-/*}}}*/
+-/* Device_setGeometry    -- Set disk geometry                       */ /*{{{*/
+-void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks)
+-{
+-  this->secLength=secLength;
+-  this->sectrk=sectrk;
+-  this->tracks=tracks;
+ 
+-  this->geom.dg_secsize   = secLength;
+-  this->geom.dg_sectors   = sectrk;
++/*
++================================================================================
++ Device_report - report values, added uBee 2016/07/14
++================================================================================
++*/
++static void Device_report_1(struct Device *this, struct cpmSuperBlock *d)
++{
++ printf("device_libdsk: Device_setGeometry()\n"
++        "d->cylinders            = %d\n"
++        "d->secLength            = %d\n"
++        "d->sectrk               = %d\n"
++        "d->tracks               = %d\n"
++        "d->datasect             = %d\n"
++        "d->heads                = %d\n"
++        "d->sidedness            = %d\n"
++        "d->testside             = %d\n"
++        "d->secLength            = %d\n"
++        "d->fm                   = %d\n"
++        "d->datarate             = %d\n"
++        "this->geom.dg_heads     = %d\n"
++        "this->geom.dg_cylinders = %d\n\n",
++        d->cylinders,
++        d->secLength,
++        d->sectrk,
++        d->tracks,
++        d->datasect,
++        d->heads,
++        d->sidedness,
++        d->testside,
++        d->secLength,
++        d->fm,
++        d->datarate,
++        this->geom.dg_heads,
++        this->geom.dg_cylinders);
++}             
++
++/*
++================================================================================
++ Exit ncurses before reporting an error, added uBee 2016/07/18
++================================================================================
++*/
++static void exit_ncurses(int flags)
++{
++ if (! (flags & 0x01))
++    return;
++    
++ move(LINES-1,0);
++ refresh();
++ echo();
++ noraw();
++ endwin();
++}
++
++/*
++================================================================================
++ Set the minium and maximum sector value range, added uBee 2016/07/18
++================================================================================
++*/
++static void sector_minmax(const struct Device *this, int flags, int *min_sector, int *max_sector)
++{
++ if (flags & 0x02)  /* system tracks? */
++    {
++     *min_sector = 1;
++     *max_sector = this->sectrk;
++    }
++ else
++    {
++     *min_sector = this->datasect;
++     *max_sector = this->datasect + (this->sectrk - 1);
++    }
++}
++
++/*
++================================================================================
++ Device_setGeometry    -- Set disk geometry
++================================================================================
++*/
++void Device_setGeometry(struct Device *this, struct cpmSuperBlock *d)  /* uBee 2016/07/12 */
++{
++  this->secLength=d->secLength;
++  this->sectrk=d->sectrk;
++  this->tracks=d->tracks;
++  this->datasect=d->datasect;   /* uBee 2009/09/28 */
++  this->heads=d->heads;         /* uBee 2009/09/28 */
++  this->sidedness=d->sidedness; /* uBee 2014/02/04 */
++  this->testside=d->testside;   /* uBee 2009/09/28 */
++
++  this->geom.dg_secsize  = d->secLength;
++  this->geom.dg_sectors  = d->sectrk;
++  this->geom.dg_secbase  = d->datasect; /* uBee 2009/09/28 */
++  this->geom.dg_fm       = d->fm;       /* uBee 2010/03/17 */
++ 
++  /* uBee 2016/07/12 */
++  if (datarate != -1)                   /* use the command line option? */
++     this->geom.dg_datarate = datarate; /* set data rate */
++  else
++     if (d->datarate != -1)             /* use the diskdefs option? */
++        this->geom.dg_datarate = d->datarate; /* set data rate */
++  
+   /* Did the autoprobe guess right about the number of sectors & cylinders? */
+-  if (this->geom.dg_cylinders * this->geom.dg_heads == tracks) return;
++  if (this->geom.dg_cylinders * this->geom.dg_heads == d->tracks) return;
++
++  /* Let the tracks and heads parameter decide these values if cylinders was specified - uBee 2009/09/28 */
++  if (d->cylinders)  
++     {
++      this->geom.dg_heads     = d->heads;             /* uBee 2009/09/28 */
++      this->geom.dg_cylinders = d->tracks / d->heads; /* uBee 2009/09/28 */
++#if 0
++      Device_report_1(this, d);
++#endif      
++      return;
++     } 
++
+   /* Otherwise we guess: <= 43 tracks: single-sided. Else double. This
+    * fails for 80-track single-sided if there are any such beasts */
+-  if (tracks <= 43) 
++
++  if (d->tracks <= 43) 
+   {
+-    this->geom.dg_cylinders = tracks;
++    this->geom.dg_cylinders = d->tracks;
+     this->geom.dg_heads     = 1; 
+   }
+   else
+   {
+-    this->geom.dg_cylinders = tracks/2;
++    this->geom.dg_cylinders = d->tracks/2;
+     this->geom.dg_heads     = 2; 
+   }
++#if 0
++      Device_report_1(this, d);
++#endif  
+ }
+-/*}}}*/
+-/* Device_close          -- Close an image file                     */ /*{{{*/
++
++/*
++================================================================================
++ Device_close          -- Close an image file
++================================================================================ 
++*/
+ const char *Device_close(struct Device *this)
+ {
+-  dsk_err_t e;
++  dsk_err_t dsk_err;
+   this->opened=0;
+-  e = dsk_close(&this->dev);
+-  return (e?dsk_strerror(e):(const char*)0);
++  dsk_err = dsk_close(&this->dev);
++  return (dsk_err?dsk_strerror(dsk_err):(const char*)0);
++}
++
++/*
++================================================================================
++ uBee 2016/07/18 rev i
++ Added error checking for out of range tracks/sectors and check results
++ of reads. If error then exit(1) to avoid segmentation issues.
++ Note: No checking is done for 'head' values as it should be correct as it's
++ determined by get_physical_values().
++ Added a 'flags' parameter.
++
++ uBee 2014/02/16
++ Changes to also return the cylinder value found when calling
++ disk_read_idfield() and making use of it when reading the sector.
++   
++ uBee 2009/09/28
++ Converted this function to use physical reads instead of logical and some
++ other additions.
++
++ uBee 2015/01/08 rev h
++ Added call to new get_physical_values() to return physical values based
++ on 'sidedness' value.  Sidedness is done here from within cpmtools and
++ does not use the LibDsk Sidedness option.
++   
++ uBee 2010/03/17 rev d
++ Added logical sector (lsector) for drivers that need a logical sector
++ number and handle's it's own skew translation i.e the 'remote' driver on
++ CP/M 3, CP/M 2 or a method to use a modified remote AUXD.COM which is
++ being here.
++================================================================================
++*/
++/* Device_readSector     -- read a physical sector */
++const char *Device_readSector(const struct Device *this, int track, int sector,
++int lsector, int flags, char *buf)
++{
++ dsk_err_t dsk_err;
++ int head;
++ int cylinder;
++ int head_result;
++ int cyl_result;
++
++ int min_sector;
++ int max_sector;
++
++ /* determine what the allowed sector range is - uBee 2016/07/18 */
++ sector_minmax(this, flags, &min_sector, &max_sector);
++
++ /* check sector value is legal for the geometry - uBee 2016/07/18 */
++ if (sector < min_sector || sector > max_sector)
++    {
++     exit_ncurses(flags);
++     printf("patched-cpmtools error: Device_readSector() - illegal sector value!\n");
++     printf("sector=%d, allowed range=%d to %d\n", sector, min_sector, max_sector);
++     exit (1);
++    }
++
++ /* convert to physical values according to sidedness */
++ get_physical_values(this->geom.dg_cylinders, this->geom.dg_heads,
++ this->sidedness, track, &cylinder, &head);
++
++ /* check track (physical) value is legal for the geometry - uBee 2016/07/14 */
++ if (cylinder >= this->geom.dg_cylinders)
++    {
++     exit_ncurses(flags);
++     printf("patched-cpmtools error: Device_readSector() - illegal cylinder value!\n");
++     printf("cylinder=%d, allowed range=0 to %d\n", cylinder, this->geom.dg_cylinders - 1);
++     exit (1);
++    }
++
++ /* The original 'remote' AUXD program is based on logical and skewed values.
++    If using an unmodified AUXD program the following code could be used to
++    some limited degree, but instead a customised AUXD for the Microbee
++    computer has been created, within that the dsk_pread() function uses
++    physical and unskewed sector values. By doing it this way ubeedisk and
++    this patched cpmtools will work for all floppy disks.
++ */
++#if 0
++ if (strcmp(device_type, "remote") == 0)
++    {
++     sector = lsector;   /* use the logical sector number */
++     cylinder = track;   /* back to the logical track number */
++    }
++#endif
++
++#if 0
++ printf("Device_readSector(): head=%d cyl=%02d sector=%d\n", head, cylinder, sector);
++#endif
++
++ /* Check side/cylinder value in first found sector ID.  This is done if requested by the disk format
++ uBee 2009/12/11, 2010/03/11, 2014/02/16 */
++ if (this->testside)
++    {
++     dsk_err = disk_read_idfield(this, head, cylinder, &head_result, &cyl_result);
++
++#if 0
++     printf("Device_readSector(): head=%d cyl=%02d head_result=%d cyl_result=%02d sector=%d\n",
++     head, cylinder, head_result, cyl_result, sector);
++#endif
++
++     /* uBee 2014/02/16 - The 1st cylinder/head values are the physical
++      * values, the 2nd cylinder/head values is what is expected to be
++      * in the sector header. */
++
++     dsk_err = dsk_xread(this->dev, &this->geom, buf, cylinder, head, cyl_result, head_result, sector, this->secLength, NULL);
++     if (dsk_err == DSK_ERR_NOTIMPL)
++        dsk_err = dsk_pread(this->dev, &this->geom, buf, cylinder, head, sector);
++    }
++ else
++    dsk_err = dsk_pread(this->dev, &this->geom, buf, cylinder, head, sector);
++
++ /* check result and exit if an error - uBee 2016/07/14 */
++ if (dsk_err != DSK_ERR_OK)
++    {
++     exit_ncurses(flags);
++     printf("patched-cpmtools error: Device_readSector(): head=%d cylinder=%d sector=%d\n", head, cylinder, sector);
++     printf("Check \"-f format\" and all parameters are correct for this disk!\n");
++     exit (1);
++    }
++
++ return (dsk_err?dsk_strerror(dsk_err):(const char*)0);
++}
++
++/*
++================================================================================
++ uBee 2016/07/18 rev i
++ Added error checking for out of range tracks/sectors and check results
++ of writes. If error then exit(1) to avoid segmentation issues.
++ Note: No checking is done for 'head' values as it should be correct as it's
++ determined by get_physical_values().
++ Added a 'flags' parameter.
++
++ uBee 2014/02/16
++ Changes to also return the cylinder value found when calling
++ disk_read_idfield() and making use of it when writing the sector.
++
++ uBee 2009/09/28
++ Converted this function to use physical writes instead of logical and some
++ other additions.
++
++ uBee 2015/01/08 rev h
++ Added call to new get_physical_values() to return physical values based
++ on 'sidedness' value.  Sidedness is done here from within cpmtools and
++ does not use the LibDsk Sidedness option.
++
++ uBee 2010/03/17 rev d
++ Added logical sector (lsector) for drivers that need a logical sector
++ number and handle's it's own skew translation i.e the 'remote' driver on
++ CP/M 3, CP/M 2 or a method to use a modified remote AUXD.COM which is
++ being here.
++================================================================================
++*/
++/* Device_writeSector    -- write physical sector */
++const char *Device_writeSector(const struct Device *this, int track, int sector,
++int lsector, int flags, const char *buf)
++{
++ dsk_err_t dsk_err;
++ int head;
++ int cylinder;
++ int head_result;
++ int cyl_result;
++
++ int min_sector;
++ int max_sector;
++
++ /* determine what the allowed sector range is - uBee 2016/07/18 */
++ sector_minmax(this, flags, &min_sector, &max_sector);
++
++ /* check sector value is legal for the geometry - uBee 2016/07/18 */
++ if (sector < min_sector || sector > max_sector)
++    {
++     exit_ncurses(flags);
++     printf("patched-cpmtools error: Device_writeSector() - illegal sector value!\n");
++     printf("sector=%d, allowed range=%d to %d\n", sector, min_sector, max_sector);
++     exit (1);
++    }
++
++ /* convert to physical values according to sidedness */
++ get_physical_values(this->geom.dg_cylinders, this->geom.dg_heads,
++ this->sidedness, track, &cylinder, &head);
++
++ /* check track (physical) value is legal for the geometry - uBee 2016/07/14 */
++ if (cylinder >= this->geom.dg_cylinders)
++    {
++     exit_ncurses(flags);
++     printf("patched-cpmtools error: Device_writeSector() - illegal cylinder value!\n");
++     printf("cylinder=%d, allowed range=0 to %d\n", cylinder, this->geom.dg_cylinders - 1);
++     exit (1);
++    }
++
++ /* The original 'remote' AUXD program is based on logical and skewed values.
++    If using an unmodified AUXD program the following code could be used to
++    some limited degree, but instead a customised AUXD for the Microbee
++    computer has been created, within that the dsk_pwrite() function uses
++    physical and unskewed sector values. By doing it this way ubeedisk and
++    this patched cpmtools will work for all floppy disks.
++ */
++#if 0
++ if (strcmp(device_type, "remote") == 0)
++    {
++     sector = lsector;   /* use the logical sector number */
++     cylinder = track;   /* back to the logical track number */
++    }
++#endif
++
++#if 0
++ printf("Device_writeSector(): head=%d cyl=%02d sector=%d\n", head, cylinder, sector);
++#endif
++
++ /* Check side/cylinder value in first found sector ID.  This is done if requested by the disk format
++    uBee 2009/12/11, 2010/03/11, 2014/02/16 */
++ if (this->testside)
++    {
++     dsk_err = disk_read_idfield(this, head, cylinder, &head_result, &cyl_result);
++
++#if 0
++     printf("Device_readSector(): head=%d cyl=%02d head_result=%d cyl_result=%02d sector=%d\n",
++     head, cylinder, head_result, cyl_result, sector);
++#endif
++
++     dsk_err = dsk_xwrite(this->dev, &this->geom, buf, cylinder, head, cyl_result, head_result, sector, this->secLength, (int)NULL);
++     if (dsk_err == DSK_ERR_NOTIMPL)
++        dsk_err = dsk_pwrite(this->dev, &this->geom, buf, cylinder, head, sector);
++    }
++ else
++    dsk_err = dsk_pwrite(this->dev, &this->geom, buf, cylinder, head, sector);
++
++ /* check result and exit if an error - uBee 2016/07/14 */
++ if (dsk_err != DSK_ERR_OK)
++    {
++     exit_ncurses(flags);
++     printf("patched-cpmtools error: Device_writeSector(): head=%d cylinder=%d sector=%d\n", head, cylinder, sector);
++     printf("Check \"-f format\" and all parameters are correct for this disk!\n");
++     exit (1);
++    }
++
++  return (dsk_err?dsk_strerror(dsk_err):(const char*)0);
+ }
+-/*}}}*/
+-/* Device_readSector     -- read a physical sector                  */ /*{{{*/
+-const char *Device_readSector(const struct Device *this, int track, int sector, char *buf)
+-{
+-  dsk_err_t e;
+-  e = dsk_lread(this->dev, &this->geom, buf, (track * this->sectrk) + sector);
+-  return (e?dsk_strerror(e):(const char*)0);
+-}
+-/*}}}*/
+-/* Device_writeSector    -- write physical sector                   */ /*{{{*/
+-const char *Device_writeSector(const struct Device *this, int track, int sector, const char *buf)
+-{
+-  dsk_err_t e;
+-  e = dsk_lwrite(this->dev, &this->geom, buf, (track * this->sectrk) + sector);
+-  return (e?dsk_strerror(e):(const char*)0);
++
++/*
++================================================================================
++ uBee 2009/09/28
++ Set LibDsk options from one of the cpmtools utility programs.
++
++ This function allows setting of various LibDsk options separated by spaces.
++   pass: struct Device *this
++ return: void
++================================================================================
++*/
++void Device_libdsk_options (char *libdsk_opts)
++{
++ int i;
++ char options[100];
++
++ options[0] = ' '; /* leading space as delimiter */
++ strncpy(&options[1], libdsk_opts, sizeof(options)-2);
++ options[sizeof(options)-1] = 0;
++ i = strlen(options);
++ options[i] = ' '; /* trailing space */
++ options[i+1] = 0;
++ 
++ i = 0;
++ while (options[i])
++    {
++     options[i] = toupper(options[i]);
++     i++;
++    }
++
++ if (strstr(options, " HD "))
++    datarate = 0;
++
++ if (strstr(options, " DD "))
++    datarate = 1;
++
++ if (strstr(options, " SD "))
++    datarate = 2;
++
++ if (strstr(options, " ED "))
++    datarate = 3;
++
++ if (strstr(options, " DSTEP "))
++    doublestep = 1;
+ }
+-/*}}}*/
+diff -u cpmtools-2.10/device_posix.c cpmtools-2.10-diff/device_posix.c
+--- cpmtools-2.10/device_posix.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/device_posix.c	2016-11-16 10:53:54.602843247 +1030
+@@ -1,4 +1,3 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <assert.h>
+@@ -11,36 +10,59 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+ 
+-/* Device_open           -- Open an image file                      */ /*{{{*/
++
++/* Device_open           -- Open an image file                      */
+ const char *Device_open(struct Device *this, const char *filename, int mode, const char *deviceOpts)
+ {
+   this->fd=open(filename,mode);
+   this->opened=(this->fd==-1?0:1);
+   return ((this->fd==-1)?strerror(errno):(const char*)0);
+ }
+-/*}}}*/
+-/* Device_setGeometry    -- Set disk geometry                       */ /*{{{*/
+-void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks)
++
++/* Device_setGeometry    -- Set disk geometry                       */
++/* uBee 2009/09/28 void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks) */
++
++void Device_setGeometry(struct Device *this, struct cpmSuperBlock *d)  /* uBee 2016/07/12 */
+ {
+-  this->secLength=secLength;
+-  this->sectrk=sectrk;
+-  this->tracks=tracks;
++  this->secLength=d->secLength;
++  this->sectrk=d->sectrk;
++  this->tracks=d->tracks;
++  this->datasect=d->datasect;   /* uBee 2009/09/28 */
++  this->heads=d->heads;         /* uBee 2009/09/28 */
++  this->sidedness=d->sidedness; /* uBee 2014/02/04 */
++  this->testside=d->testside;   /* uBee 2009/09/28 */
++
++  this->geom.dg_secsize  = d->secLength;
++  this->geom.dg_sectors  = d->sectrk;
++  this->geom.dg_secbase  = d->datasect; /* uBee 2009/09/28 */
++  this->geom.dg_fm       = d->fm;       /* uBee 2010/03/17 */
+ }
+-/*}}}*/
+-/* Device_close          -- Close an image file                     */ /*{{{*/
++
++/* Device_close          -- Close an image file                     */
+ const char *Device_close(struct Device *this)
+ {
+   this->opened=0;
+   return ((close(this->fd)==-1)?strerror(errno):(const char*)0);
+ }
+-/*}}}*/
+-/* Device_readSector     -- read a physical sector                  */ /*{{{*/
+-const char *Device_readSector(const struct Device *this, int track, int sector, char *buf)
++
++/*
++================================================================================
++ uBee 2016/07/18 rev i
++ Added 'flags' parameter, won't be used here.
++ 
++ uBee 2010/03/17 rev d
++ Added logical sector (lsector) for drivers that need a logical sector
++ number and handle's it's own skew translation i.e the 'remote' driver on
++ CP/M 3, CP/M 2 not tried. (Probably not by this driver)
++================================================================================
++*/
++/* Device_readSector     -- read a physical sector                  */
++const char *Device_readSector(const struct Device *this, int track, int sector, int lsector, int flags, char *buf)
+ {
+   int res;
+ 
++  sector -= this->datasect; /* make the sector 0 based uBee 2009/09/28 */
+   assert(sector>=0);
+   assert(sector<this->sectrk);
+   assert(track>=0);
+@@ -59,10 +81,22 @@
+   }
+   return (const char*)0;
+ }
+-/*}}}*/
+-/* Device_writeSector    -- write physical sector                   */ /*{{{*/
+-const char *Device_writeSector(const struct Device *this, int track, int sector, const char *buf)
++
++/*
++================================================================================
++ uBee 2016/07/18 rev i
++ Added 'flags' parameter, won't be used here.
++
++ uBee 2010/03/17 rev d
++ Added logical sector (lsector) for drivers that need a logical sector
++ number and handle's it's own skew translation i.e the 'remote' driver on
++ CP/M 3, CP/M 2 not tried. (Probably not by this driver)
++================================================================================ 
++*/
++/* Device_writeSector    -- write physical sector                   */
++const char *Device_writeSector(const struct Device *this, int track, int sector, int lsector, int flags, const char *buf)
+ {
++  sector -= this->datasect; /* make the sector 0 based - uBee 2009/09/28 */
+   assert(sector>=0);
+   assert(sector<this->sectrk);
+   assert(track>=0);
+@@ -74,4 +108,3 @@
+   if (write(this->fd, buf, this->secLength) == this->secLength) return (const char*)0;
+   return strerror(errno);
+ }
+-/*}}}*/
+diff -u cpmtools-2.10/device_win32.c cpmtools-2.10-diff/device_win32.c
+--- cpmtools-2.10/device_win32.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/device_win32.c	2016-11-16 10:53:54.602843247 +1030
+@@ -1,4 +1,3 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <assert.h>
+@@ -11,8 +10,7 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+-/* types */ /*{{{*/
++
+ #define PHYSICAL_SECTOR_1       1 /* First physical sector */
+ 
+ /* Use the INT13 interface rather than INT25/INT26. This appears to
+@@ -90,9 +88,8 @@
+     WORD sectorcount;
+     WORD sectortable[80];
+     } DRIVEPARAMS, *PDRIVEPARAMS;
+-/*}}}*/
+ 
+-static char *strwin32error(void) /*{{{*/
++static char *strwin32error(void)
+ {
+     static char buffer[1024];
+ 
+@@ -104,32 +101,32 @@
+                   1023, NULL);
+     return buffer;
+ }
+-/*}}}*/
+-static BOOL LockVolume( HANDLE hDisk ) /*{{{*/
++
++static BOOL LockVolume( HANDLE hDisk )
+ {
+     DWORD ReturnedByteCount;
+ 
+     return DeviceIoControl( hDisk, FSCTL_LOCK_VOLUME, NULL, 0, NULL,
+                 0, &ReturnedByteCount, NULL );
+ }
+-/*}}}*/
+-static BOOL UnlockVolume( HANDLE hDisk )  /*{{{*/
++
++static BOOL UnlockVolume( HANDLE hDisk )
+ {
+     DWORD ReturnedByteCount;
+ 
+     return DeviceIoControl( hDisk, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL,
+                 0, &ReturnedByteCount, NULL );
+ }
+-/*}}}*/
+-static BOOL DismountVolume( HANDLE hDisk ) /*{{{*/
++
++static BOOL DismountVolume( HANDLE hDisk )
+ {
+     DWORD ReturnedByteCount;
+ 
+     return DeviceIoControl( hDisk, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL,
+                 0, &ReturnedByteCount, NULL );
+ }
+-/*}}}*/
+-static int GetDriveParams( HANDLE hVWin32Device, int volume, DRIVEPARAMS* pParam ) /*{{{*/
++
++static int GetDriveParams( HANDLE hVWin32Device, int volume, DRIVEPARAMS* pParam )
+   {
+   DIOC_REGISTERS reg;
+   BOOL bResult;
+@@ -149,8 +146,8 @@
+ 
+   return 0;
+   }
+-/*}}}*/
+-static int SetDriveParams( HANDLE hVWin32Device, int volume, DRIVEPARAMS* pParam ) /*{{{*/
++
++static int SetDriveParams( HANDLE hVWin32Device, int volume, DRIVEPARAMS* pParam )
+   {
+   DIOC_REGISTERS reg;
+   BOOL bResult;
+@@ -170,8 +167,8 @@
+ 
+   return 0;
+   }
+-/*}}}*/
+-static int GetMediaID( HANDLE hVWin32Device, int volume, MID* pMid ) /*{{{*/
++
++static int GetMediaID( HANDLE hVWin32Device, int volume, MID* pMid )
+   {
+   DIOC_REGISTERS reg;
+   BOOL bResult;
+@@ -191,8 +188,8 @@
+ 
+   return 0;
+   }
+-/*}}}*/
+-static int VolumeCheck(HANDLE hVWin32Device, int volume, WORD* flags ) /*{{{*/
++
++static int VolumeCheck(HANDLE hVWin32Device, int volume, WORD* flags )
+ {
+   DIOC_REGISTERS reg;
+   BOOL bResult;
+@@ -211,8 +208,8 @@
+   *flags = (WORD)(reg.reg_EDX & 0xffff);
+   return 0;
+ }
+-/*}}}*/
+-static int LockLogicalVolume(HANDLE hVWin32Device, int volume, int lock_level, int permissions) /*{{{*/
++
++static int LockLogicalVolume(HANDLE hVWin32Device, int volume, int lock_level, int permissions)
+ {
+   DIOC_REGISTERS reg;
+   BOOL bResult;
+@@ -232,8 +229,8 @@
+ 
+   return 0;
+ }
+-/*}}}*/
+-static int UnlockLogicalVolume( HANDLE hVWin32Device, int volume ) /*{{{*/
++
++static int UnlockLogicalVolume( HANDLE hVWin32Device, int volume )
+ {
+   DIOC_REGISTERS reg;
+   BOOL bResult;
+@@ -250,8 +247,8 @@
+   if ( !bResult || (reg.reg_Flags & 1) ) return -1;
+   return 0;
+ }
+-/*}}}*/
+-static int w32mode(int mode) /*{{{*/
++
++static int w32mode(int mode)
+ {
+     switch(mode)
+     {
+@@ -260,9 +257,9 @@
+     }
+     return GENERIC_READ | GENERIC_WRITE;
+ }
+-/*}}}*/
+ 
+-/* Device_open           -- Open an image file                      */ /*{{{*/
++
++/* Device_open           -- Open an image file                      */
+ const char *Device_open(struct Device *sb, const char *filename, int mode, const char *deviceOpts)
+ {
+     /* Windows 95/NT: floppy drives using handles */ 
+@@ -382,54 +379,66 @@
+     sb->opened  = 1;
+     return NULL;
+ }
+-/*}}}*/
+-/* Device_setGeometry    -- Set disk geometry                       */ /*{{{*/
+-void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks)
++
++/* Device_setGeometry    -- Set disk geometry                       */
++/* uBee 2009/09/28 void Device_setGeometry(struct Device *this, int secLength, int sectrk, int tracks) */
++
++void Device_setGeometry(struct Device *this, struct cpmSuperBlock *d)  /* uBee 2016/07/12 */
+ {
+   int n;
+ 
+-  this->secLength=secLength;
+-  this->sectrk=sectrk;
+-  this->tracks=tracks;
++  this->secLength=d->secLength;
++  this->sectrk=d->sectrk;
++  this->tracks=d->tracks;
++  this->datasect=d->datasect;   /* uBee 2009/09/28 */
++  this->heads=d->heads;         /* uBee 2009/09/28 */
++  this->sidedness=d->sidedness; /* uBee 2014/02/04 */
++  this->testside=d->testside;   /* uBee 2009/09/28 */
++
++  this->geom.dg_secsize  = d->secLength;
++  this->geom.dg_sectors  = d->sectrk;
++  this->geom.dg_secbase  = d->datasect; /* uBee 2009/09/28 */
++  this->geom.dg_fm       = d->fm;       /* uBee 2010/03/17 */
++ 
+   if (this->drvtype == CPMDRV_WIN95)
+   {
+       DRIVEPARAMS drvp;
+       memset(&drvp, 0, sizeof(drvp));
+       if (GetDriveParams( this->hdisk, this->fd, &drvp )) return;
+ 
+-      drvp.bytespersector  = secLength;
+-      drvp.sectorspertrack = sectrk;
+-      drvp.totalsectors    = sectrk * tracks;
++      drvp.bytespersector  = d->secLength;
++      drvp.sectorspertrack = d->sectrk;
++      drvp.totalsectors    = d->sectrk * d->tracks;
+ 
+ /* Guess the cylinder/head configuration from the track count. This will
+  * get single-sided 80-track discs wrong, but it's that or double-sided
+  * 40-track (or add cylinder/head counts to diskdefs) 
+  */
+-      if (tracks < 44)
++      if (d->tracks < 44)
+       {
+-        drvp.cylinders       = tracks;
++        drvp.cylinders       = d->tracks;
+         drvp.heads           = 1;
+       }
+       else
+       {
+-        drvp.cylinders       = tracks / 2;
++        drvp.cylinders       = d->tracks / 2;
+         drvp.heads           = 2;
+       }
+ 
+ /* Set up "reasonable" values for the other members */
+ 
+-      drvp.sectorspercluster = 1024 / secLength;
++      drvp.sectorspercluster = 1024 / d->secLength;
+       drvp.reservedsectors   = 1;
+       drvp.numberofFATs      = 2;
+-      drvp.sectorcount       = sectrk;
++      drvp.sectorcount       = d->sectrk;
+       drvp.rootdirsize       = 64;
+       drvp.mediaid           = 0xF0;
+       drvp.hiddensectors     = 0;
+       drvp.sectorsperfat     = 3;
+-      for (n = 0; n < sectrk; n++)
++      for (n = 0; n < d->sectrk; n++)
+       {
+           drvp.sectortable[n*2]   = n + PHYSICAL_SECTOR_1;    /* Physical sector numbers */ 
+-          drvp.sectortable[n*2+1] = secLength;
++          drvp.sectortable[n*2+1] = d->secLength;
+       }
+       drvp.special = 6;
+ /* We have not set:
+@@ -443,8 +452,8 @@
+       SetDriveParams( this->hdisk, this->fd, &drvp );
+   }
+ }
+-/*}}}*/
+-/* Device_close          -- Close an image file                     */ /*{{{*/
++
++/* Device_close          -- Close an image file                     */
+ const char *Device_close(struct Device *sb)
+ {
+     sb->opened = 0;
+@@ -464,13 +473,25 @@
+     if (close(sb->fd)) return strerror(errno);
+     return NULL; 
+ }
+-/*}}}*/
+-/* Device_readSector     -- read a physical sector                  */ /*{{{*/
+-const char *Device_readSector(const struct Device *drive, int track, int sector, char *buf)
++
++/*
++================================================================================
++ uBee 2016/07/18 rev i
++ Added 'flags' parameter, won't be used here.
++
++ uBee 2010/03/17 rev d
++ Added logical sector (lsector) for drivers that need a logical sector
++ number and handle's it's own skew translation i.e the 'remote' driver on
++ CP/M 3, CP/M 2 not tried. (Probably not by this driver)
++================================================================================ 
++*/
++/* Device_readSector     -- read a physical sector                  */
++const char *Device_readSector(const struct Device *drive, int track, int sector, int lsector, int flags, char *buf)
+ {
+   int res;
+   off_t offset;
+ 
++  sector -= this->datasect; /* make the sector 0 based uBee 2009/09/28 */
+   assert(sector>=0);
+   assert(sector<drive->sectrk);
+   assert(track>=0);
+@@ -565,13 +586,25 @@
+   }
+   return NULL;
+ }
+-/*}}}*/
+-/* Device_writeSector    -- write physical sector                   */ /*{{{*/
+-const char *Device_writeSector(const struct Device *drive, int track, int sector, const char *buf)
++
++/*
++================================================================================
++ uBee 2016/07/18 rev i
++ Added 'flags' parameter, won't be used here.
++
++ uBee 2010/03/17 rev d
++ Added logical sector (lsector) for drivers that need a logical sector
++ number and handle's it's own skew translation i.e the 'remote' driver on
++ CP/M 3, CP/M 2 not tried. (Probably not by this driver)
++================================================================================
++*/
++/* Device_writeSector    -- write physical sector                   */
++const char *Device_writeSector(const struct Device *drive, int track, int sector, int lsector, int flags, const char *buf)
+ {
+   off_t offset;
+   int res;
+ 
++  sector -= this->datasect; /* make the sector 0 based - uBee 2009/09/28 */
+   assert(sector>=0);
+   assert(sector<drive->sectrk);
+   assert(track>=0);
+@@ -654,4 +687,3 @@
+   if (write(drive->fd, buf, drive->secLength) == drive->secLength) return NULL;
+   return strerror(errno);
+ }
+-/*}}}*/
+diff -u cpmtools-2.10/diskdefs cpmtools-2.10-diff/diskdefs
+--- cpmtools-2.10/diskdefs	2009-07-07 00:50:50.000000000 +0930
++++ cpmtools-2.10-diff/diskdefs	2016-11-16 10:53:54.602843247 +1030
+@@ -1,320 +1,355 @@
+-diskdef ibm-3740
+-  seclen 128
+-  tracks 77
+-  sectrk 26
+-  blocksize 1024
+-  maxdir 64
+-  skew 6
+-  boottrk 2
+-  os p2dos
+-end
++# Definitions in this file use the uBee patched-cpmtools methods. Version
++# 2.10i or later is required to support all the parameters.
++#
++# See the README.PATCH file for information concerning where to locate this
++# file and a full description of all the options that may be used here.
+ 
+-diskdef 4mb-hd
+-  seclen 128
+-  tracks 1024
+-  sectrk 32
++# Microbee 5.25" SBC DS40 (5.25" DS DD 40T 10x512 s/t)
++diskdef ds40
++  seclen 512
++  cylinders 40
++  sectrk 10
++  heads 2
+   blocksize 2048
+-  maxdir 256
+-  skew 1
+-  boottrk 0
+-  os p2dos
++  maxdir 128
++  skew 3
++  skewstart 2
++  datasect 1
++  testside 1
++  boottrk 2
++  os 2.2
+ end
+ 
+-diskdef pcw
++# Microbee 3.5" CIAB SS80 (3.5" SS DD 80T 10x512 s/t)
++diskdef ss80
+   seclen 512
+-  tracks 40
+-  sectrk 9
+-  blocksize 1024
+-  maxdir 64
+-  skew 1
+-  boottrk 1
+-  os 3
++  cylinders 80
++  sectrk 10
++  heads 1
++  blocksize 2048
++  maxdir 128
++  skew 3
++  skewstart 2
++  datasect 1
++  boottrk 2
++  os 2.2
+ end
+ 
+-diskdef pc1.2m
++# Microbee 3.5" Modular DS80 (3.5" DS DD 80T 10x512 s/t)
++diskdef ds80
+   seclen 512
+-  tracks 80
+-  # this format uses 15 sectors per track, but 30 per cylinder
+-  sectrk 30
++  cylinders 80
++  sectrk 10
++  heads 2
+   blocksize 4096
+-  maxdir 256
+-  skew 1
+-  boottrk 0
+-  os 3
++  maxdir 128
++  skew 3
++  skewstart 22
++  datasect 21
++  testside 1
++  boottrk 4
++  os 2.2
+ end
+ 
+-# CP/M 86 on 1.44MB floppies
+-diskdef cpm86-144feat
++# Microbee 3.5" Dreamdisk DS82 (3.5" DS DD 80T 10x512 s/t)
++diskdef ds82
+   seclen 512
+-  tracks 160
+-  sectrk 18
+-  blocksize 4096
++  cylinders 80
++  sectrk 10
++  heads 2
++  blocksize 2048
+   maxdir 256
+-  skew 1
++  skew 3
++  skewstart 2
++  datasect 1
++  testside 1
+   boottrk 2
+-  os 3
++  os 2.2
+ end
+ 
+-diskdef cf2dd
++# Microbee 3.5" PJB DS84 (3.5" DS DD 80T 10x512 s/t)
++diskdef ds84
+   seclen 512
+-  tracks 160
+-  sectrk 9
+-  blocksize 2048
+-  maxdir 256
+-  skew 1
+-  boottrk 1
+-  os 3
+-end
+-
+-#amstrad: values are read from super block (special name hardcoded)
+-
+-# Royal alphatronic
+-# setfdprm /dev/fd1 dd ssize=256 cyl=40 sect=16 head=2
+-diskdef alpha
+-  seclen 256
+-  tracks 40
+-  sectrk 32
+-  blocksize 2048
++  cylinders 80
++  sectrk 10
++  heads 2
++  blocksize 4096
+   maxdir 128
+-  skew 1
++  skew 3
++  skewstart 2
++  datasect 1
++  testside 1
+   boottrk 2
+   os 2.2
+ end
+ 
+-# Apple II CP/M skew o Apple II DOS 3.3 skew
+-diskdef apple-do
+-  seclen 256
+-  tracks 35
+-  sectrk 16
+-  blocksize 1024
+-  maxdir 64
+-  skew 0
+-  boottrk 3
++# Microbee Dreamdisk DS40
++diskdef dreamdisk40
++  seclen 512
++  cylinders 40
++  sectrk 10
++  heads 2
++  blocksize 2048
++  maxdir 128
++  skew 3
++  skewstart 2
++  datasect 1
++  testside 1
++  boottrk 2
+   os 2.2
+ end
+ 
+-# Apple II CP/M skew o Apple II PRODOS skew
+-diskdef apple-po
+-  seclen 256
+-  tracks 35
+-  sectrk 16
+-  blocksize 1024
+-  maxdir 64
+-  skew 0
+-  boottrk 3
++# BeeBoard 3.5" DS8b (3.5" DS DD 80T 10x512 s/t)
++# (Not sure if maxdir of 128 is correct, should it be 256? for 2K blocks)
++diskdef ds8b
++  seclen 512
++  cylinders 80
++  sectrk 10
++  heads 2
++  blocksize 2048
++  maxdir 128
++  skew 3
++  skewstart 2
++  datasect 1
++  testside 1
++  boottrk 4
+   os 2.2
+ end
+ 
+-# MYZ80 hard drive (only works with libdsk, because it has a 256-byte header)
+-diskdef myz80
+-  seclen 1024
+-  tracks 64
+-  sectrk 128
+-  blocksize 4096
+-  maxdir 1024
+-  skew 1
+-  boottrk 0
+-  os 3
+-end
+-
+-# Despite being Amstrad formats, CPC System and CPC Data don't have an Amstrad 
+-# superblock. You'll need to use libdsk to access them because the Linux 
+-# and Windows kernel drivers won't touch them.
+-diskdef cpcsys
++# Microbee Dreamdisk DS80
++diskdef dreamdisk80
+   seclen 512
+-  tracks 40
+-  sectrk 9
+-  blocksize 1024
+-  maxdir 64
+-  skew 1
++  cylinders 80
++  sectrk 10
++  heads 2
++  blocksize 2048
++  maxdir 256
++  skew 3
++  skewstart 2
++  datasect 1
++  testside 1
+   boottrk 2
+-  os 3
+-end
+-diskdef cpcdata
+-  seclen 512
+-  tracks 40
+-  sectrk 9
+-  blocksize 1024
+-  maxdir 64
+-  skew 1
+-  boottrk 0
+-  os 3
++  os 2.2
+ end
+ 
+-# after being read in with no sector skew.
+-diskdef nigdos
++# Microbee Nanowasp (DS DD 40T 10x512 s/t)
++# This is a strange format which appears to use an interleaved format and
++# does not appear to be the same format as LibDsk's Nanowasp layout which
++# uses sidedness=2 (out-out).
++# To read this disk image (thought to be created by NW's emulator author) a
++# workaround using cylinders=80, heads=1 and sidedness=3 is required.
++# It probably can't be used to read/write files on a floppy disk.
++
++diskdef nw40
+   seclen 512
+-  # NigDos double sided disk format, 42 tracks * 2 sides
+-  tracks 84
++  cylinders 80
+   sectrk 10
++  heads 1
++  sidedness 3
+   blocksize 2048
+   maxdir 128
+-  skew 1
+-  boottrk 0
+-  # this format wastes half of the directory entry
+-  logicalextents 1
+-  os 3
++  skew 3
++  skewstart 2
++  datasect 1
++  testside 1
++  boottrk 2
++  os 2.2
+ end
+ 
+-diskdef epsqx10
+-  seclen 512
+-  tracks 40
+-  sectrk 20
++# Amust Compak 5.25" 80T (5.25" DS DD 80T 16x256 5x512 s/t)
++diskdef compak
++  seclen 1024
++  cylinders 80
++  sectrk 5
++  heads 2
+   blocksize 2048
+-  maxdir 128
+-  skew 0
++  maxdir 320
++  skew 2
++  skewstart 1
++  datasect 1
+   boottrk 2
+   os 2.2
+ end
+ 
+-diskdef ibm-8ss
++# PortaPak 5.25" 80T (5.25" DS DD 80T 10x512 s/t)
++diskdef portapak
+   seclen 512
+-  tracks 40
+-  sectrk 8
+-  blocksize 1024
+-  maxdir 64
+-  skew 0
+-  boottrk 1
++  cylinders 80
++  sectrk 10
++  heads 2
++  blocksize 2048
++  maxdir 128
++  skew 2
++  skewstart 1
++  datasect 1
++  boottrk 3
+   os 2.2
+ end
+ 
+-diskdef ibm-8ds
+-  seclen 512
+-  tracks 40
+-  sectrk 8
+-  blocksize 1024
+-  maxdir 64
+-  skew 0
+-  boottrk 1
++# Excalibur 80x5x1024 (format 4)
++diskdef excalibur4
++  seclen 1024
++  cylinders 80
++  sectrk 5
++  heads 2
++  sideoffs 128
++  blocksize 2048
++  maxdir 128
++  skew 3
++  skewstart 1
++  datasect 1
++  boottrk 2
+   os 2.2
+ end
+ 
+-diskdef electroglas
+-  seclen 512
+-  tracks 80
+-  sectrk 10
++# Knight SME Aussie Byte 5.25" DS DD 80x5x1024
++diskdef k80dsdd1024
++  seclen 1024
++  cylinders 80
++  sectrk 5
++  heads 2
++  sideoffs 128
+   blocksize 2048
+   maxdir 256
+-  skew 0
+-  boottrk 1
+-  os 3
+-end
+-
+-# IBM CP/M-86
+-# setfdprm /dev/fd1 sect=8 dtr=1 hd ssize=512 tpi=48 head=1
+-diskdef ibmpc-514ss
+-   seclen 512
+-   tracks 40
+-   sectrk 8
+-   blocksize 1024
+-   maxdir 64
+-   skew 1
+-   boottrk 1
+-   os 2.2
+-end
+-
+-# IBM CP/M-86
+-# setfdprm /dev/fd1 sect=8 dtr=1 hd ssize=512 tpi=48
+-diskdef ibmpc-514ds
+-   seclen 512
+-   tracks 80
+-   sectrk 8
+-   blocksize 2048
+-   maxdir 64
+-   skew 0
+-   boottrk 2
+-   os 2.2
++  skew 2
++  skewstart 1
++  datasect 1
++  boottrk 4
++  os 2.2
+ end
+ 
+-diskdef p112
++# Knight SME Aussie Byte 5.25" DS DD 80x10x512
++diskdef k80dsdd512
+   seclen 512
+-  tracks 160
+-  sectrk 18
++  cylinders 80
++  sectrk 10
++  heads 2
++  sideoffs 128
+   blocksize 2048
+-  maxdir 256
++  maxdir 128
+   skew 1
++  skewstart 1
++  datasect 1
+   boottrk 2
+-  os 3
++  os 2.2
+ end
+ 
+-diskdef p112-old
+-  seclen 512
+-  tracks 160
++# Knight SME Aussie Byte 5.25" SS SD 80x18x128
++diskdef k80sssd128
++  seclen 128
++  cylinders 80
+   sectrk 18
+-  blocksize 2048
+-  maxdir 128
+-  skew 1
+-  boottrk 1
+-  os 3
+-end
+-
+-diskdef kpii
+-  seclen 512
+-  tracks 40
+-  sectrk 10
++  heads 1
++  fm 1
+   blocksize 1024
+-  maxdir 32
+-  skew 0
+-  boottrk 1
++  maxdir 64
++  skew 4
++  skewstart 1
++  datasect 1
++  boottrk 3
+   os 2.2
+ end
+ 
+-# setfdprm /dev/fd0 dd sect=10
+-diskdef interak
+-  seclen 512
+-  tracks 80
+-  sectrk 20
+-  blocksize 4096
+-  maxdir 256
+-  skew 1
++# IBM 3740 format
++diskdef ibm3740
++  seclen 128  
++  cylinders 77
++  sectrk 26    
++  heads 1
++  fm 1
++  datarate 0
++  blocksize 1024
++  maxdir 64
++  skew 6   
++  skewstart 1
++  datasect 1
+   boottrk 2
+-  os 2.2
++  os p2dos
+ end
+ 
+-# Timex FDD3000 3"
+-diskdef fdd3000
+-  seclen 256
+-  tracks 40
+-  sectrk 16
++# IBM datamax8000sd format
++diskdef datamax8000sd
++  seclen 128
++  cylinders 77
++  sectrk 26
++  heads 1
++  fm 1
++  datarate 0
+   blocksize 1024
++  maxdir 64
++  skew 6
++  skewstart 1
++  datasect 1
++  boottrk 2
++  os p2dos
++end
++  
++# greybeard's (8" SS SD 77T 9x512 s/t)
++diskdef gbss77
++  seclen 512 
++  cylinders 77
++  sectrk 9
++  heads 1  
++  blocksize 2048
+   maxdir 128
+-  boottrk 4
+-  os 2.2
+-  skew 7
++  skew 2
++  skewstart 2
++  datasect 1
++  boottrk 2
++  os 2.2  
+ end
+ 
+-# Timex FDD3000 3"
+-diskdef fdd3000_2
+-  seclen 256
+-  tracks 40
+-  sectrk 16
++# 5.25" Single density, Double sided (5.25" DS SD 40T 18x128 s/t)
++# Sidedness (1) is Out-Back (see README.PATCH)
++diskdef ds40s
++  seclen 128
++  cylinders 40
++  sectrk 18
++  heads 2
++  fm 1
++  sidedness 1
+   blocksize 1024
+-  maxdir 128
+-  boottrk 2
++  maxdir 64
++  skew 3
++  skewstart 1
++  datasect 1
++  testside 1
++  boottrk 3
+   os 2.2
+-  skew 5
+ end
+ 
+-# Robotron 1715
+-diskdef 1715
+-  seclen 1024
+-  tracks 40
+-  sectrk 5
++# 5.25" Single density, Single sided (5.25" SS SD 40T 18x128 s/t)
++# Sidedness (1) is Out-Back (see README.PATCH)
++diskdef ss40s
++  seclen 128
++  cylinders 40
++  sectrk 18
++  heads 1
++  fm 1
++  sidedness 1
+   blocksize 1024
+   maxdir 64
+-  skew 0
++  skew 3
++  skewstart 1
++  datasect 1
++  testside 1
+   boottrk 3
+   os 2.2
+ end
+ 
+-# Robotron 1715 with SCP3
+-diskdef 17153
+-  seclen 1024
+-  tracks 160
+-  sectrk 5
++# LBB 5.25" DS HD 77T (5.25" DS HD 77T 17x512 s/t)
++diskdef lbb_77dshd
++  seclen 512
++  cylinders 77
++  sectrk 17   
++  heads 2     
++  sidedness 2 
+   blocksize 2048
+-  maxdir 128
+-  skew 0
+-  boottrk 4
+-  os 3
++  maxdir 192
++  skew 3
++  skewstart 1
++  datasect 1 
++  testside 0 
++  boottrk 2  
++  os 2.2     
+ end
+diff -u cpmtools-2.10/fsck.cpm.c cpmtools-2.10-diff/fsck.cpm.c
+--- cpmtools-2.10/fsck.cpm.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/fsck.cpm.c	2016-11-16 10:53:54.612843181 +1030
+@@ -1,4 +1,3 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <assert.h>
+@@ -15,8 +14,6 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+-/* #defines */ /*{{{*/
+ /* your favourite password *:-) */
+ 
+ #define T0 'G'
+@@ -37,16 +34,12 @@
+ #define P5 ((char)(T2^PB))
+ #define P6 ((char)(T1^PB))
+ #define P7 ((char)(T0^PB))
+-/*}}}*/
+ 
+-/* types */ /*{{{*/
+ enum Result { OK=0, MODIFIED=1, BROKEN=2 };
+-/*}}}*/
+-/* variables */ /*{{{*/
++
+ static int norepair=0;
+-/*}}}*/
+ 
+-/* bcdCheck -- check format and range of BCD digit */ /*{{{*/
++/* bcdCheck -- check format and range of BCD digit */
+ static int bcdCheck(int n, int max, const char *msg, const char *unit, int extent1, int extent2)
+ {
+   if (((n>>4)&0xf)>10 || (n&0xf)>10 || (((n>>4)&0xf)*10+(n&0xf))>=max)
+@@ -56,8 +49,8 @@
+   }
+   else return 0;
+ }
+-/*}}}*/
+-/* pwdCheck -- check password */ /*{{{*/
++
++/* pwdCheck -- check password */
+ static int pwdCheck(int extent, const char *pwd, char decode)
+ {
+   char c;
+@@ -82,8 +75,8 @@
+   }
+   return 0;
+ }
+-/*}}}*/
+-/* ask -- ask user and return answer */ /*{{{*/
++
++/* ask -- ask user and return answer */
+ static int ask(const char *msg)
+ {
+   while (1)
+@@ -101,8 +94,8 @@
+     }
+   }
+ }
+-/*}}}*/
+-/* prfile -- print file name */ /*{{{*/
++
++/* prfile -- print file name */
+ static char *prfile(struct cpmSuperBlock *sb, int extent)
+ {
+   struct PhysDirectoryEntry *dir;
+@@ -138,18 +131,17 @@
+   *s='\0';
+   return name;
+ }
+-/*}}}*/
+-/* fsck -- file system check */ /*{{{*/
++
++/* fsck -- file system check */
+ static int fsck(struct cpmInode *root, const char *image)
+ {
+-  /* variables */ /*{{{*/
++  /* variables */
+   enum Result ret=OK;
+   int extent,extent2;
+   struct PhysDirectoryEntry *dir,*dir2;
+   struct cpmSuperBlock *sb=root->sb;
+-  /*}}}*/
+ 
+-  /* Phase 1: check extent fields */ /*{{{*/
++  /* Phase 1: check extent fields */
+   printf("Phase 1: check extent fields\n");
+   for (extent=0; extent<sb->maxdir; ++extent)
+   {
+@@ -158,9 +150,9 @@
+ 
+     dir=sb->dir+extent;
+     status=&dir->status;
+-    if (*status>=0 && *status<=(sb->type==CPMFS_P2DOS ? 31 : 15)) /* directory entry */ /*{{{*/
++    if (*status>=0 && *status<=(sb->type==CPMFS_P2DOS ? 31 : 15)) /* directory entry */
+     {
+-      /* check name and extension */ /*{{{*/
++      /* check name and extension */
+       {
+         int i;
+         char *c;
+@@ -198,8 +190,8 @@
+         }
+         if (*status==(char)0xe5) continue;
+       }
+-      /*}}}*/
+-      /* check extent number */ /*{{{*/
++
++      /* check extent number */
+       if ((dir->extnol&0xff)>0x1f)
+       {
+         printf("Error: Bad lower bits of extent number (extent=%d, name=\"%s\", low bits=%d)\n",extent,prfile(sb,extent),dir->extnol&0xff);
+@@ -222,8 +214,8 @@
+         else ret|=BROKEN;
+       }
+       if (*status==(char)0xe5) continue;
+-      /*}}}*/
+-      /* check last record byte count */ /*{{{*/
++
++      /* check last record byte count */
+       if ((dir->lrc&0xff)>128)
+       {
+         printf("Error: Bad last record byte count (extent=%d, name=\"%s\", lrc=%d)\n",extent,prfile(sb,extent),dir->lrc&0xff);
+@@ -235,8 +227,8 @@
+         else ret|=BROKEN;
+       }
+       if (*status==(char)0xe5) continue;
+-      /*}}}*/
+-      /* check block number range */ /*{{{*/
++
++      /* check block number range */
+       {
+         int block,min,max,i;
+ 
+@@ -264,10 +256,9 @@
+         }
+         if (*status==(char)0xe5) continue;
+       }
+-      /*}}}*/
+-      /* check number of used blocks ? */ /*{{{*/
+-      /*}}}*/
+-      /* check record count */ /*{{{*/
++
++      /* check number of used blocks ? */
++      /* check record count */
+       {
+         int i,min,max,recordsInBlocks,used=0;
+ 
+@@ -294,21 +285,21 @@
+         }
+         if (*status==(char)0xe5) continue;
+       }
+-      /*}}}*/
+-      /* check for too large .com files */ /*{{{*/
++
++      /* check for too large .com files */
+       if (((EXTENT(dir->extnol,dir->extnoh)==3 && dir->blkcnt>=126) || EXTENT(dir->extnol,dir->extnoh)>=4) && (dir->ext[0]&0x7f)=='C' && (dir->ext[1]&0x7f)=='O' && (dir->ext[2]&0x7f)=='M')
+       {
+         printf("Warning: Oversized .COM file (extent=%d, name=\"%s\")\n",extent,prfile(sb,extent));
+       }
+-      /*}}}*/
++
+     }
+-    /*}}}*/
+-    else if ((sb->type==CPMFS_P2DOS || sb->type==CPMFS_DR3) && *status==33) /* check time stamps ? */ /*{{{*/
++
++    else if ((sb->type==CPMFS_P2DOS || sb->type==CPMFS_DR3) && *status==33) /* check time stamps ? */
+     {
+       unsigned long created,modified;
+       char s;
+ 
+-      if ((s=sb->dir[extent2=(extent&~3)].status)>=0 && s<=(sb->type==CPMFS_P2DOS ? 31 : 15)) /* time stamps for first of the three extents */ /*{{{*/
++      if ((s=sb->dir[extent2=(extent&~3)].status)>=0 && s<=(sb->type==CPMFS_P2DOS ? 31 : 15)) /* time stamps for first of the three extents */
+       {
+         bcdCheck(dir->name[2],24,sb->cnotatime ? "creation date" : "access date","hour",extent,extent2);
+         bcdCheck(dir->name[3],60,sb->cnotatime ? "creation date" : "access date","minute",extent,extent2);
+@@ -321,8 +312,8 @@
+           printf("Warning: Modification date earlier than creation date (extent=%d/%d)\n",extent,extent2);
+         }
+       }
+-      /*}}}*/
+-      if ((s=sb->dir[extent2=(extent&~3)+1].status)>=0 && s<=(sb->type==CPMFS_P2DOS ? 31 : 15)) /* time stamps for second */ /*{{{*/
++
++      if ((s=sb->dir[extent2=(extent&~3)+1].status)>=0 && s<=(sb->type==CPMFS_P2DOS ? 31 : 15)) /* time stamps for second */
+       {
+         bcdCheck(dir->lrc,24,sb->cnotatime ? "creation date" : "access date","hour",extent,extent2);
+         bcdCheck(dir->extnoh,60,sb->cnotatime ? "creation date" : "access date","minute",extent,extent2);
+@@ -335,8 +326,8 @@
+           printf("Warning: Modification date earlier than creation date (extent=%d/%d)\n",extent,extent2);
+         }
+       }
+-      /*}}}*/
+-      if ((s=sb->dir[extent2=(extent&~3)+2].status)>=0 && s<=(sb->type==CPMFS_P2DOS ? 31 : 15)) /* time stamps for third */ /*{{{*/
++
++      if ((s=sb->dir[extent2=(extent&~3)+2].status)>=0 && s<=(sb->type==CPMFS_P2DOS ? 31 : 15)) /* time stamps for third */
+       {
+         bcdCheck(dir->pointers[7],24,sb->cnotatime ? "creation date" : "access date","hour",extent,extent2);
+         bcdCheck(dir->pointers[8],60,sb->cnotatime ? "creation date" : "access date","minute",extent,extent2);
+@@ -349,10 +340,9 @@
+           printf("Warning: Modification date earlier than creation date (extent=%d/%d)\n",extent,extent2);
+         }
+       }
+-      /*}}}*/
+     }
+-    /*}}}*/
+-    else if (sb->type==CPMFS_DR3 && *status==32) /* disc label */ /*{{{*/
++
++    else if (sb->type==CPMFS_DR3 && *status==32) /* disc label */
+     {
+       unsigned long created,modified;
+ 
+@@ -402,10 +392,10 @@
+         else ret|=BROKEN;
+       }
+     }
+-    /*}}}*/
+-    else if (sb->type==CPMFS_DR3 && *status>=16 && *status<=31) /* password */ /*{{{*/
++
++    else if (sb->type==CPMFS_DR3 && *status>=16 && *status<=31) /* password */
+     {
+-      /* check name and extension */ /*{{{*/
++      /* check name and extension */
+       {
+         int i;
+         char *c;
+@@ -443,8 +433,8 @@
+         }
+         if (*status==(char)0xe5) continue;
+       }
+-      /*}}}*/
+-      /* check password */ /*{{{*/
++
++      /* check password */
+       if (dir->extnol&(0x80|0x40|0x20) && pwdCheck(extent,dir->pointers,dir->lrc))
+       {
+         char msg[80];
+@@ -465,10 +455,9 @@
+         }
+         else ret|=BROKEN;
+       }
+-      /*}}}*/
+     }
+-    /*}}}*/
+-    else if (*status!=(char)0xe5) /* bad status */ /*{{{*/
++
++    else if (*status!=(char)0xe5) /* bad status */
+     {
+       printf("Error: Bad status (extent=%d, name=\"%s\", status=0x%02x)\n",extent,prfile(sb,extent),*status&0xff);
+       if (ask("Clear entry"))
+@@ -479,12 +468,11 @@
+       else ret|=BROKEN;
+       continue;
+     }
+-    /*}}}*/
+   }
+-  /*}}}*/
+-  /* Phase 2: check extent connectivity */ /*{{{*/
++
++  /* Phase 2: check extent connectivity */
+   printf("Phase 2: check extent connectivity\n");
+-  /* check multiple allocated blocks */ /*{{{*/
++  /* check multiple allocated blocks */
+   for (extent=0; extent<sb->maxdir; ++extent) if ((dir=sb->dir+extent)->status>=0 && dir->status<=(sb->type==CPMFS_P2DOS ? 31 : 15))
+   {
+     int i,j,block,block2;
+@@ -509,8 +497,8 @@
+       }
+     }
+   }
+-  /*}}}*/
+-  /* check multiple extents */ /*{{{*/
++
++  /* check multiple extents */
+   for (extent=0; extent<sb->maxdir; ++extent) if ((dir=sb->dir+extent)->status>=0 && dir->status<=(sb->type==CPMFS_P2DOS ? 31 : 15))
+   {
+     for (extent2=0; extent2<sb->maxdir; ++extent2) if ((dir2=sb->dir+extent2)->status>=0 && dir2->status<=(sb->type==CPMFS_P2DOS ? 31 : 15))
+@@ -532,9 +520,8 @@
+       }
+     }
+   }
+-  /*}}}*/
+-  /*}}}*/
+-  if (ret==0) /* print statistics */ /*{{{*/
++
++  if (ret==0) /* print statistics */
+   {
+     struct cpmStatFS statfsbuf;
+     int fragmented=0,borders=0;
+@@ -559,14 +546,12 @@
+     fragmented=(borders ? (1000*fragmented)/borders : 0);
+     printf("%s: %ld/%ld files (%d.%d%% non-contigous), %ld/%ld blocks\n",image,statfsbuf.f_files-statfsbuf.f_ffree,statfsbuf.f_files,fragmented/10,fragmented%10,statfsbuf.f_blocks-statfsbuf.f_bfree,statfsbuf.f_blocks);
+   }
+-  /*}}}*/
+   return ret;
+ }
+-/*}}}*/
+ 
+ const char cmd[]="fsck.cpm";
+ 
+-/* main */ /*{{{*/
++/* main */
+ int main(int argc, char *argv[])
+ {
+   const char *err;
+@@ -574,17 +559,29 @@
+   const char *format=FORMAT;
+   const char *devopts=NULL;
+   int c,usage=0;
++  int information = 0;
+   struct cpmSuperBlock sb;
+   struct cpmInode root;
+   enum Result ret;
+ 
+-  while ((c=getopt(argc,argv,"T:f:nh?"))!=EOF) switch(c)
++#if HAVE_LIBDSK_H
++  /* LibDsk option addition - uBee 2009/09/28 */
++  while ((c=getopt(argc,argv,"T:L:f:nih?v"))!=EOF) switch(c)
++#else  
++  while ((c=getopt(argc,argv,"T:f:nih?v"))!=EOF) switch(c)
++#endif  
+   {
+     case 'f': format=optarg; break;
+     case 'T': devopts=optarg; break;
+     case 'n': norepair=1; break;
++    case 'i': information = 1; break;
+     case 'h':
+     case '?': usage=1; break;
++    case 'v': fprintf(stderr, APPVER"\n");    /* uBee 2010/03/31 */
++              exit(1);
++#if HAVE_LIBDSK_H
++    case 'L': Device_libdsk_options(optarg);  /* uBee 2009/09/28 */
++#endif    
+   }
+ 
+   if (optind!=(argc-1)) usage=1;
+@@ -593,8 +590,42 @@
+   if (usage)
+   {
+     fprintf(stderr,"Usage: %s [-f format] [-n] image\n",cmd);
++    /* Add some more information about existing and new options - uBee 2009/09/28 */
++    fprintf(stderr,"\nOther options:\n");
++    fprintf(stderr," -i    Information about format: Cyl Hds Strk Ssze Btrks.\n");  /* 2015/01/09 uBee */
++    fprintf(stderr," -v    Report build version.\n");  /* 2010/03/31 uBee */
++#if HAVE_LIBDSK_H
++    fprintf(stderr," -T    libdsk type.\n");
++    fprintf(stderr," -L x  LibDsk options (x) separated by spaces in double quotes\n");
++    fprintf(stderr,"             hd : data rate for 1.4Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             dd : data rate for 360k 5.25\" in 1.2Mb drive.\n");
++    fprintf(stderr,"             sd : data rate for 720k 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             ed : data rate for 2.8Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"          dstep : double step (40T disk in 80T drive)\n");
++#endif
+     exit(1);
+   }
++
++  /* output some disk information to console to be used by scripts, an
++   * image must also be specified - uBee 2015/01/09 2016/04/02 */
++  if (information)
++     {
++      if ((err=Device_open(&sb.dev, image,O_RDONLY, devopts)))
++         {
++          fprintf(stderr,"%s: can not open %s: %s\n",cmd,image,err);
++          exit(1);
++         }
++
++      cpmReadSuper(&sb,&root,format);
++      /* changing the order will break scripts that use the values */
++      printf("%d %d %d %d %d %d\n",
++      sb.dev.geom.dg_cylinders, sb.dev.geom.dg_heads, sb.dev.geom.dg_sectors,
++      sb.dev.geom.dg_secsize, sb.boottrk, sb.sidedness);
++      cpmUmount(&sb);
++      
++      exit(0);   
++     }
++
+   if ((err=Device_open(&sb.dev, image, (norepair ? O_RDONLY : O_RDWR), devopts)))
+   {
+     if ((err=Device_open(&sb.dev, image,O_RDONLY, devopts)))
+@@ -624,4 +655,3 @@
+   if (ret&BROKEN) return 2;
+   else return 0;
+ }
+-/*}}}*/
+diff -u cpmtools-2.10/fsed.cpm.c cpmtools-2.10-diff/fsed.cpm.c
+--- cpmtools-2.10/fsed.cpm.c	2009-06-17 19:58:05.000000000 +0930
++++ cpmtools-2.10-diff/fsed.cpm.c	2016-11-16 10:53:54.612843181 +1030
+@@ -1,9 +1,12 @@
+-/* #includes */ /*{{{C}}}*//*{{{*/
+ #include "config.h"
+ 
+ #include <assert.h>
+ #include <ctype.h>
++#ifdef _WIN32  /* uBee 2016/07/18 */
++#include <ncurses/curses.h>
++#else
+ #include <curses.h>
++#endif
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <stdio.h>
+@@ -14,13 +17,12 @@
+ #ifdef USE_DMALLOC
+ #include <dmalloc.h>
+ #endif
+-/*}}}*/
+ 
+ extern char **environ;
+ 
+ static char *mapbuf;
+ 
+-static struct tm *cpmtime(char lday, char hday, char hour, char min) /*{{{*/
++static struct tm *cpmtime(char lday, char hday, char hour, char min)
+ {
+   static struct tm tm;
+   unsigned long days=(lday&0xff)|((hday&0xff)<<8);
+@@ -49,8 +51,8 @@
+   tm.tm_year-=1900;
+   return &tm;
+ }
+-/*}}}*/
+-static void info(struct cpmSuperBlock *sb, const char *format, const char *image) /*{{{*/
++
++static void info(struct cpmSuperBlock *sb, const char *format, const char *image)
+ {
+   const char *msg;
+ 
+@@ -82,8 +84,14 @@
+   move(23,(COLS-strlen(msg))/2); printw(msg);
+   getch();
+ }
+-/*}}}*/
+-static void map(struct cpmSuperBlock *sb) /*{{{*/
++
++/* uBee 2016/07/18 rev i
++  This appears to be a debugging option?, it is accessed by pressing the
++  'm' key.  It does not appear in the menu selection.
++  
++  It may exit with an error.
++*/
++static void map(struct cpmSuperBlock *sb)
+ {
+   const char *msg;
+   char bmap[18*80];
+@@ -104,8 +112,20 @@
+   for (pos=0; pos<(sb->maxdir*32+sb->secLength-1)/sb->secLength; ++pos)
+   {
+     int entry;
++    /* uBee 2016/07/18 rev i - this does the system tracks (not skewed)
++    Added 3 to be passed to 'flags' parameter in Device_readSector() to
++    indicate we are accessing system tracks and using ncurses.
++    Added +1 to the sector number as doing physical sector numbers
++    
++    uBee 2010/03/17 rev d
++    Added logical sector (lsector) for drivers that need a logical sector
++    number and handle's it's own skew translation i.e the 'remote' driver on
++    CP/M 3, CP/M 2 not tried.
++   
++    3 locations changed in this source.*/
++
++    Device_readSector(&sb->dev,sb->boottrk+pos/(sb->sectrk*sb->secLength),pos/sb->secLength + 1,0,3,mapbuf);
+ 
+-    Device_readSector(&sb->dev,sb->boottrk+pos/(sb->sectrk*sb->secLength),pos/sb->secLength,mapbuf);
+     for (entry=0; entry<sb->secLength/32 && (pos*sb->secLength/32)+entry<sb->maxdir; ++entry)
+     {
+       int i;
+@@ -139,8 +159,8 @@
+   move(23,(COLS-strlen(msg))/2); printw(msg);
+   getch();
+ }
+-/*}}}*/
+-static void data(struct cpmSuperBlock *sb, const char *buf, unsigned long int pos) /*{{{*/
++
++static void data(struct cpmSuperBlock *sb, const char *buf, unsigned long int pos)
+ {
+   int offset=(pos%sb->secLength)&~0x7f;
+   int i;
+@@ -154,13 +174,11 @@
+   }
+   move(4+((pos&0x7f)>>4),((pos&0x7f)&0x0f)*3+!!((pos&0x7f)&0x8)+1);
+ }
+-/*}}}*/
+ 
+ const char cmd[]="fsed.cpm";
+ 
+-int main(int argc, char *argv[]) /*{{{*/
++int main(int argc, char *argv[])
+ {
+-  /* variables */ /*{{{*/
+   const char *devopts=(const char*)0;
+   char *image;
+   const char *err;
+@@ -172,15 +190,24 @@
+   chtype ch;
+   int reload;
+   char *buf;
+-  /*}}}*/
+ 
+-  /* parse options */ /*{{{*/
+-  while ((c=getopt(argc,argv,"f:h?"))!=EOF) switch(c)
++  /* parse options */
++#if HAVE_LIBDSK_H
++  /* LibDsk option addition - uBee 2009/09/28 */
++  while ((c=getopt(argc,argv,"T:L:f:h?v"))!=EOF) switch(c)
++#else  
++  while ((c=getopt(argc,argv,"T:f:h?v"))!=EOF) switch(c)
++#endif  
+   {
+     case 'f': format=optarg; break;
+     case 'T': devopts=optarg; break;
+     case 'h':
+     case '?': usage=1; break;
++    case 'v': fprintf(stderr, APPVER"\n");    /* uBee 2010/03/31 */
++              exit(1);
++#if HAVE_LIBDSK_H
++    case 'L': Device_libdsk_options(optarg);  /* uBee 2009/09/28 */
++#endif    
+   }
+ 
+   if (optind!=(argc-1)) usage=1;
+@@ -189,25 +216,37 @@
+   if (usage)
+   {
+     fprintf(stderr,"Usage: fsed.cpm [-f format] image\n");
++    /* Add some more information about existing and new options - uBee 2009/09/28 */
++    fprintf(stderr,"\nOther options:\n");
++    fprintf(stderr," -v    Report build version.\n");  /* 2010/03/31 uBee */
++#if HAVE_LIBDSK_H
++    fprintf(stderr," -T    libdsk type.\n");
++    fprintf(stderr," -L x  LibDsk options (x) separated by spaces in double quotes\n");
++    fprintf(stderr,"             hd : data rate for 1.4Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             dd : data rate for 360k 5.25\" in 1.2Mb drive.\n");
++    fprintf(stderr,"             sd : data rate for 720k 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"             ed : data rate for 2.8Mb 3.5\" in 3.5\" drive.\n");
++    fprintf(stderr,"          dstep : double step (40T disk in 80T drive)\n");
++#endif
+     exit(1);
+   }
+-  /*}}}*/
+-  /* open image */ /*{{{*/
++
++  /* open image */
+   if ((err=Device_open(&drive.dev,image,O_RDONLY,devopts))) 
+   {
+     fprintf(stderr,"%s: can not open %s (%s)\n",cmd,image,err);
+     exit(1);
+   }
+   cpmReadSuper(&drive,&root,format);
+-  /*}}}*/
+-  /* alloc sector buffers */ /*{{{*/
++
++  /* alloc sector buffers */
+   if ((buf=malloc(drive.secLength))==(char*)0 || (mapbuf=malloc(drive.secLength))==(char*)0)
+   {
+     fprintf(stderr,"fsed.cpm: can not allocate sector buffer (%s).\n",strerror(errno));
+     exit(1);
+   }
+-  /*}}}*/
+-  /* init curses */ /*{{{*/
++
++  /* init curses */
+   initscr();
+   noecho();
+   raw();
+@@ -216,21 +255,22 @@
+   idcok(stdscr,TRUE);
+   keypad(stdscr,TRUE);
+   clear();
+-  /*}}}*/
+ 
+   pos=0;
+   reload=1;
+   do
+   {
+-    /* display position and load data */ /*{{{*/
++    /* display position and load data */
+     clear();
+     move(2,0); printw("Byte %8lu (0x%08lx)  ",pos,pos);
+     if (pos<(drive.boottrk*drive.sectrk*drive.secLength))
+     {
++      /* uBee 2016/07/18 - this does the system tracks (not skewed) */
+       printw("Physical sector %3lu  ",((pos/drive.secLength)%drive.sectrk)+1);
+     }
+     else
+     {
++      /* uBee 2016/07/18 - this does the data tracks (skewed) */
+       printw("Sector %3lu ",((pos/drive.secLength)%drive.sectrk)+1);
+       printw("(physical %3d)  ",drive.skewtab[(pos/drive.secLength)%drive.sectrk]+1);
+     }
+@@ -243,11 +283,18 @@
+     {
+       if (pos<(drive.boottrk*drive.sectrk*drive.secLength))
+       {
+-        err=Device_readSector(&drive.dev,pos/(drive.secLength*drive.sectrk),(pos/drive.secLength)%drive.sectrk,buf);
++        /* uBee 2016/07/18 rev i - this does the system tracks (not skewed)
++        Added 3 to be passed to 'flags' parameter in Device_readSector() to
++        indicate we are accessing system tracks and using ncurses.
++        Added +1 to the sector number as doing physical sector numbers */
++        err=Device_readSector(&drive.dev,pos/(drive.secLength*drive.sectrk),(pos/drive.secLength)%drive.sectrk + 1,0,3,buf);
+       }
+       else
+       {
+-        err=Device_readSector(&drive.dev,pos/(drive.secLength*drive.sectrk),drive.skewtab[(pos/drive.secLength)%drive.sectrk],buf);
++        /* uBee 2016/07/18 rev i - this does the data tracks (skewed)
++        Added 1 to be passed to 'flags' parameter in Device_readSector() to
++        indicate we are accessing system using ncurses. */
++        err=Device_readSector(&drive.dev,pos/(drive.secLength*drive.sectrk),drive.skewtab[(pos/drive.secLength)%drive.sectrk],0,1,buf);
+       }
+       if (err)
+       {
+@@ -255,9 +302,8 @@
+       }
+       else reload=0;
+     }
+-    /*}}}*/
+ 
+-    if /* position before end of system area */ /*{{{*/
++    if /* position before end of system area */
+     (pos<(drive.boottrk*drive.sectrk*drive.secLength))
+     {
+       const char *msg;
+@@ -267,7 +313,7 @@
+       if (!reload) data(&drive,buf,pos);
+       switch (ch=getch())
+       {
+-        case 'F': /* next 16 byte */ /*{{{*/
++        case 'F': /* next 16 byte */
+         {
+           if (pos+16<(drive.sectrk*drive.tracks*(unsigned long)drive.secLength))
+           {
+@@ -276,8 +322,8 @@
+           }
+           break;
+         }
+-        /*}}}*/
+-        case 'B': /* previous 16 byte */ /*{{{*/
++
++        case 'B': /* previous 16 byte */
+         {
+           if (pos>=16)
+           {
+@@ -286,11 +332,10 @@
+           }
+           break;
+         }
+-        /*}}}*/
+       }
+     }
+-    /*}}}*/
+-    else if /* position before end of directory area */ /*{{{*/
++
++    else if /* position before end of directory area */
+     (pos<(drive.boottrk*drive.sectrk*drive.secLength+drive.maxdir*32))
+     {
+       const char *msg;
+@@ -302,7 +347,7 @@
+       move(LINES-3,36); printw("F)orward entry     B)ackward entry");
+ 
+       move(13,0); printw("Entry %3d: ",entry);      
+-      if /* free or used directory entry */ /*{{{*/
++      if /* free or used directory entry */
+       ((buf[entrystart]>=0 && buf[entrystart]<=(drive.type==CPMFS_P2DOS ? 31 : 15)) || buf[entrystart]==(char)0xe5)
+       {
+         int i;
+@@ -375,8 +420,8 @@
+           }
+         }
+       }
+-      /*}}}*/
+-      else if /* disc label */ /*{{{*/
++
++      else if /* disc label */
+       (buf[entrystart]==0x20 && drive.type==CPMFS_DR3)
+       {
+         int i;
+@@ -456,8 +501,8 @@
+         printw("%02d",tm->tm_min);
+         attroff(A_REVERSE);
+       }
+-      /*}}}*/
+-      else if /* time stamp */ /*{{{*/
++
++      else if /* time stamp */
+       (buf[entrystart]==0x21 && (drive.type==CPMFS_P2DOS || drive.type==CPMFS_DR3))
+       {
+         const struct tm *tm;
+@@ -556,8 +601,8 @@
+         printw("%02d",tm->tm_min);
+         attroff(A_REVERSE);
+       }
+-      /*}}}*/
+-      else if /* password */ /*{{{*/
++
++      else if /* password */
+       (buf[entrystart]>=16 && buf[entrystart]<=31 && drive.type==CPMFS_DR3)
+       {
+         int i;
+@@ -606,19 +651,19 @@
+         printw("0x%02x",buf[entrystart+13]&0xff);
+         attroff(A_REVERSE);
+       }
+-      /*}}}*/
+-      else /* bad status */ /*{{{*/
++
++      else /* bad status */
+       {
+         printw("Bad status ");
+         if (offset==0) attron(A_REVERSE);
+         printw("0x%02x",buf[entrystart]);
+         attroff(A_REVERSE);
+       }
+-      /*}}}*/
++
+       if (!reload) data(&drive,buf,pos);
+       switch (ch=getch())
+       {
+-        case 'F': /* next entry */ /*{{{*/
++        case 'F': /* next entry */
+         {
+           if (pos+32<(drive.sectrk*drive.tracks*(unsigned long)drive.secLength))
+           {
+@@ -627,8 +672,8 @@
+           }
+           break;
+         }
+-        /*}}}*/
+-        case 'B': /* previous entry */ /*{{{*/
++
++        case 'B': /* previous entry */
+         {
+           if (pos>=32)
+           {
+@@ -637,11 +682,10 @@
+           }
+           break;
+         }
+-        /*}}}*/
+       }
+     }
+-    /*}}}*/
+-    else /* data area */ /*{{{*/
++
++    else /* data area */
+     {
+       const char *msg;
+ 
+@@ -649,12 +693,11 @@
+       if (!reload) data(&drive,buf,pos);
+       ch=getch();
+     }
+-    /*}}}*/
+ 
+-    /* process common commands */ /*{{{*/
++    /* process common commands */
+     switch (ch)
+     {
+-      case 'n': /* next record */ /*{{{*/
++      case 'n': /* next record */
+       {
+         if (pos+128<(drive.sectrk*drive.tracks*(unsigned long)drive.secLength))
+         {
+@@ -663,8 +706,8 @@
+         }
+         break;
+       }
+-      /*}}}*/
+-      case 'p': /* previous record */ /*{{{*/
++
++      case 'p': /* previous record */
+       {
+         if (pos>=128)
+         {
+@@ -673,8 +716,8 @@
+         }
+         break;
+       }
+-      /*}}}*/
+-      case 'N': /* next track */ /*{{{*/
++
++      case 'N': /* next track */
+       {
+         if ((pos+drive.sectrk*drive.secLength)<(drive.sectrk*drive.tracks*drive.secLength))
+         {
+@@ -683,8 +726,8 @@
+         }
+         break;
+       }
+-      /*}}}*/
+-      case 'P': /* previous track */ /*{{{*/
++
++      case 'P': /* previous track */
+       {
+         if (pos>=drive.sectrk*drive.secLength)
+         {
+@@ -693,8 +736,8 @@
+         }
+         break;
+       }
+-      /*}}}*/
+-      case 'b': /* byte back */ /*{{{*/
++
++      case 'b': /* byte back */
+       {
+         if (pos)
+         {
+@@ -703,8 +746,8 @@
+         }
+         break;
+       }
+-      /*}}}*/
+-      case 'f': /* byte forward */ /*{{{*/
++
++      case 'f': /* byte forward */
+       {
+         if (pos+1<drive.tracks*drive.sectrk*drive.secLength)
+         {
+@@ -713,20 +756,17 @@
+         }
+         break;
+       }
+-      /*}}}*/
++
+       case 'i': info(&drive,format,image); break;
+       case 'm': map(&drive); break;
+     }
+-    /*}}}*/
+   } while (ch!='q');
+ 
+-  /* exit curses */ /*{{{*/
++  /* exit curses */
+   move(LINES-1,0);
+   refresh();
+   echo();
+   noraw();
+   endwin();
+-  /*}}}*/
+   exit(0);
+ }
+-/*}}}*/
