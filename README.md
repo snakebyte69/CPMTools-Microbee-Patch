@@ -4,11 +4,11 @@
 % brew install libdsk
 
 Apply the patch
-% cd cpmtools-2.10
-% patch < cpmtools-2.10j-ubee.patch
+- % cd cpmtools-2.10
+- % patch < cpmtools-2.10j-ubee.patch
 
 Build
-> % ./configure --with-libdsk=/opt/homebrew
+| % ./configure --with-libdsk=/opt/homebrew
 > % make
 > % make install
 > 
