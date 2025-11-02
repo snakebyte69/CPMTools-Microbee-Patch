@@ -17,7 +17,7 @@ Install libdsk
 ## Original Build Instructions ##
 
 ### Building patched cpmtools ### 
-### ========================= ###
+
 The patched-cpmtools is dependent on LibDsk being available and is needed
 for all RAW and other disk image formats including floppy disks.
 
