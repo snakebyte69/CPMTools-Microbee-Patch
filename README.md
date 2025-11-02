@@ -1,5 +1,4 @@
 # CPMTools Microbee Patch #
-## Windows, macOS, Linux build instructions go here ##
 ### macOS ###
 Install libdsk
 % brew install libdsk
@@ -13,6 +12,8 @@ Install libdsk
 #### Microbee diskdefs ####
  - copy microbee diskdefs to
  /usr/local/share/
+
+## Windows, Linux build instructions go here ##
 
 ## Original Build Instructions ##
 
