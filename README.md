@@ -1,16 +1,17 @@
 # CPMTools Microbee Patch #
 ## Windows, macOS, Linux build instructions go here ##
 ### macOS ###
+Install libdsk
 % brew install libdsk
 
 Apply the patch
 - % cd cpmtools-2.10
 - % patch < cpmtools-2.10j-ubee.patch
 
-Build
+Build with libdsk
 - % ./configure --with-libdsk=/opt/homebrew
 - % make
-- % make install
+- % sudo make install
 - 
  - copy microbee diskdefs to
  /usr/local/share/
