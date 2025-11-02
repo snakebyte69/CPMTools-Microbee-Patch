@@ -14,6 +14,7 @@ Install libdsk
  - copy microbee diskdefs to
  /usr/local/share/
 
+### Original Build Instructions ### 
 Building patched cpmtools
 =========================
 The patched-cpmtools is dependent on LibDsk being available and is needed
