@@ -8,12 +8,12 @@ Apply the patch
 - % patch < cpmtools-2.10j-ubee.patch
 
 Build
-| % ./configure --with-libdsk=/opt/homebrew
-> % make
-> % make install
-> 
-> - copy microbee diskdefs to
-> /usr/local/share/
+- % ./configure --with-libdsk=/opt/homebrew
+- % make
+- % make install
+- 
+ - copy microbee diskdefs to
+ /usr/local/share/
 
 Building patched cpmtools
 =========================
