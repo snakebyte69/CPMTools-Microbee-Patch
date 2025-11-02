@@ -1,5 +1,5 @@
 # CPMTools Microbee Patch #
-### macOS build instructions ###
+## macOS build instructions ##
 Install libdsk
 % brew install libdsk
 #### Apply the patch ####
