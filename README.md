@@ -3,6 +3,7 @@
 Install libdsk
 % brew install libdsk
 #### Apply the patch ####
+- copy patch to cpmtools-2.10
 - % cd cpmtools-2.10
 - % patch < cpmtools-2.10j-ubee.patch
 #### Build with libdsk ####
